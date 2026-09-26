@@ -99,13 +99,23 @@ describe("ingestion and status-change events", () => {
 
     const c2 = store.eventsFor("C-2");
     expect(c2.find((e) => e.stage === "house_second_reading")?.occurred_at).toBe("2026-09-22T19:30:00.000Z");
-    const detected = c2.find((e) => e.stage === "status:Second reading in the House of Commons");
-    expect(detected?.occurred_at_is_detected).toBe(true);
-    expect(detected?.occurred_at).toBe("2026-09-26T12:00:00.000Z");
+    // The stage change is explained by the new timestamped milestone → no duplicate "detected" event.
+    expect(c2.some((e) => e.stage.startsWith("status:"))).toBe(false);
 
     const ra = store.eventsFor("C-5").find((e) => e.stage === "royal_assent");
     expect(ra?.occurred_at).toBe("2026-09-24T21:00:00.000Z");
     expect(store.byNumber("C-5")?.royal_assent_at).toBe("2026-09-24T21:00:00.000Z");
+  });
+
+  it("a status change with no timestamp in the feed is recorded at detection time", async () => {
+    const store = new MemoryBillStore();
+    await ingestLegisinfo(store, v1, new Date("2026-09-01T12:00:00Z"));
+    const v1b = structuredClone(v1);
+    v1b[2].StatusNameEn = "At consideration in committee in the Senate";
+    v1b[2].LatestCompletedMajorStageNameWithChamberSuffix = "Second reading in the Senate";
+    await ingestLegisinfo(store, v1b, new Date("2026-09-10T08:00:00Z"));
+    const ev = store.eventsFor("S-201").find((e) => e.stage === "status:Second reading in the Senate");
+    expect(ev).toMatchObject({ occurred_at_is_detected: true, occurred_at: "2026-09-10T08:00:00.000Z" });
   });
 
   it("a bill without royal assent never gets a royal_assent_at", async () => {

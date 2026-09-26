@@ -34,7 +34,10 @@ export async function POST(req: Request) {
 
     if (base !== "en" && base !== "fr") {
       const translated = await translateResponse(cards, followups, personas, base).catch(() => null);
-      if (translated) ({ cards, followups, personas } = translated), (machine_translated = true);
+      if (translated) {
+        ({ cards, followups, personas } = translated);
+        machine_translated = true;
+      }
     }
 
     recordMatches(cards, regionOf(facts, deriveData(facts).municipality));

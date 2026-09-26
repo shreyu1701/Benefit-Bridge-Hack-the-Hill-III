@@ -77,3 +77,8 @@ export const RECENT_ASSENT_DAYS = 30;
 export function isRecentAssent(b: Pick<BillView, "royal_assent_at">, now = new Date()) {
   return Boolean(b.royal_assent_at && now.getTime() - new Date(b.royal_assent_at).getTime() < RECENT_ASSENT_DAYS * 86_400_000);
 }
+
+export function billTitle(b: Pick<BillView, "titles" | "bill_number">, lang: "en" | "fr") {
+  const s = lang === "fr" ? b.titles.short_fr || b.titles.long_fr : b.titles.short_en || b.titles.long_en;
+  return s || b.titles.short_en || b.titles.long_en || b.bill_number;
+}

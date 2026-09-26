@@ -80,7 +80,10 @@ export async function applyBill(
   if (stageText && stageText !== prevStageText) {
     const key = "status:" + stageText;
     const recorded = prev ? await store.recordedStages(id) : new Set<string>();
-    if (!recorded.has(key)) {
+    // If a new timestamped milestone explains the change (e.g. a reading or royal
+    // assent), the timeline already has it with its real date — don't duplicate it.
+    const explainedByMilestone = milestones.some((m) => !recorded.has(m.stage));
+    if (!explainedByMilestone && !recorded.has(key)) {
       events.push({
         stage: key,
         chamber: null,

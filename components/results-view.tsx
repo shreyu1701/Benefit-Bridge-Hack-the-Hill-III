@@ -1,0 +1,162 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Notice } from "@/components/ui/notice";
+import { FactInput } from "@/components/fact-input";
+import { ProgramCard } from "@/components/program-card";
+import { useLang, useT } from "@/components/lang-provider";
+import type { Facts } from "@/lib/facts/schema";
+import type { MatchResponse } from "@/lib/present";
+import { loadFlow, saveFlow, type FlowState } from "@/lib/session-state";
+
+const LEVELS = ["federal", "provincial", "municipal"] as const;
+
+export function ResultsView() {
+  const t = useT();
+  const uiLang = useLang();
+  const router = useRouter();
+  const [flow, setFlow] = useState<FlowState | null>(null);
+  const [data, setData] = useState<MatchResponse | null>(null);
+  const [error, setError] = useState(false);
+  const [skip, setSkip] = useState<string[]>([]);
+  const [showNot, setShowNot] = useState(false);
+  const [answers, setAnswers] = useState<Partial<Facts>>({});
+
+  // Results language: the user's own language if it's not English/French, else the UI language.
+  const resultsLang = flow?.detected_language && !["en", "fr"].includes(flow.detected_language.split("-")[0]) ? flow.detected_language : uiLang;
+
+  const run = useCallback(
+    async (facts: Facts, skipList: string[]) => {
+      try {
+        const res = await fetch("/api/match", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ facts, lang: resultsLang, skip_questions: skipList }),
+        });
+        if (!res.ok) throw new Error();
+        const d: MatchResponse = await res.json();
+        setError(false);
+        setData(d);
+        try {
+          sessionStorage.setItem("bb.results", JSON.stringify(d));
+        } catch {}
+      } catch {
+        setError(true);
+      }
+    },
+    [resultsLang],
+  );
+
+  useEffect(() => {
+    const f = loadFlow();
+    if (!f) {
+      router.replace("/");
+      return;
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFlow(f);
+  }, [router]);
+
+  useEffect(() => {
+    // Data fetch: state is set only after the request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (flow) run(flow.facts, skip);
+  }, [flow, skip, run]);
+
+  if (error) return <Notice>{t("common.error")}</Notice>;
+  if (!data || !flow) return <p aria-live="polite">{t("common.loading")}</p>;
+
+  const answer = (k: keyof Facts) => {
+    if (answers[k] === undefined || answers[k] === null) return setSkip((s) => [...s, k]);
+    const next = { ...flow, facts: { ...flow.facts, [k]: answers[k] } };
+    saveFlow(next);
+    setFlow(next);
+  };
+
+  const eligible = data.cards.filter((c) => c.confidence !== "not_eligible");
+  const notEligible = data.cards.filter((c) => c.confidence === "not_eligible");
+
+  return (
+    <div className="space-y-8" lang={data.lang}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h1 className="text-2xl font-bold">{t("results.title")}</h1>
+        <Link href="/confirm" className="underline text-primary">{t("results.edit")}</Link>
+      </div>
+
+      {data.machine_translated && <Notice tone="info">{t("results.machineTranslated")}</Notice>}
+
+      {data.followups.length > 0 && (
+        <section aria-labelledby="fu" className="space-y-3">
+          <h2 id="fu" className="text-xl font-semibold">{t("results.followups")}</h2>
+          {data.followups.map((q) => (
+            <Card key={q.fact} className="space-y-3">
+              <FactInput idPrefix="q" k={q.fact} value={(answers[q.fact] ?? null) as never} onChange={(v) => setAnswers((a) => ({ ...a, [q.fact]: v }))} />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={() => answer(q.fact)}>{t("q.answer")}</Button>
+                <Button size="sm" variant="ghost" onClick={() => setSkip((s) => [...s, q.fact])}>{t("q.skip")}</Button>
+              </div>
+            </Card>
+          ))}
+        </section>
+      )}
+
+      {eligible.length === 0 && <p>{t("results.none")}</p>}
+
+      {LEVELS.map((level) => {
+        const cards = eligible.filter((c) => c.level === level);
+        if (!cards.length) return null;
+        return (
+          <section key={level} aria-labelledby={`lvl-${level}`} className="space-y-3">
+            <h2 id={`lvl-${level}`} className="text-xl font-semibold">{t(`results.level.${level}`)}</h2>
+            {cards.map((c) => <ProgramCard key={c.id} card={c} speechLang={data.lang} />)}
+          </section>
+        );
+      })}
+
+      {notEligible.length > 0 && (
+        <section className="space-y-3">
+          <Button variant="outline" aria-expanded={showNot} onClick={() => setShowNot((s) => !s)}>
+            {t("results.showNot")} ({notEligible.length})
+          </Button>
+          {showNot && notEligible.map((c) => <ProgramCard key={c.id} card={c} speechLang={data.lang} />)}
+        </section>
+      )}
+
+      {data.personas.length > 0 && (
+        <section aria-labelledby="personas" className="space-y-3">
+          <h2 id="personas" className="text-xl font-semibold">{t("personas.title")}</h2>
+          <p className="text-sm text-muted">{t("personas.label")}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {data.personas.map((p) => (
+              <Card key={p.id} className="space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t("personas.label").split("—")[0]}</p>
+                <h3 className="font-bold">{p.blurb}</h3>
+                {p.likely.length > 0 && (
+                  <p><span className="font-semibold">{t("results.likely")}:</span> {p.likely.join(", ")}</p>
+                )}
+                {p.possibly.length > 0 && (
+                  <div>
+                    <span className="font-semibold">{t("results.possibly")}:</span>
+                    <ul className="list-disc pl-5 text-sm">
+                      {p.possibly.map((x) => <li key={x.name}>{x.name}{x.check ? ` — ${x.check}` : ""}</li>)}
+                    </ul>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <p>
+        <Link href="/checklist" className="inline-flex items-center rounded-lg bg-primary text-primary-foreground px-4 min-h-12 font-medium">
+          {t("results.checklist")}
+        </Link>
+      </p>
+    </div>
+  );
+}

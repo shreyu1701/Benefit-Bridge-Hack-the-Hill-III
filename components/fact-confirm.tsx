@@ -9,7 +9,12 @@ import { useLang, useT } from "@/components/lang-provider";
 import { FactInput } from "@/components/fact-input";
 import { FACT_META, formatFact } from "@/lib/facts/labels";
 import { FACT_KEYS, emptyFacts, type Facts } from "@/lib/facts/schema";
-import { clearFlow, loadFlow, saveFlow, type FlowState } from "@/lib/session-state";
+import {
+  clearFlow,
+  loadFlow,
+  saveFlow,
+  type FlowState,
+} from "@/lib/session-state";
 
 export function FactConfirm() {
   const t = useT();
@@ -17,18 +22,32 @@ export function FactConfirm() {
   const router = useRouter();
   const [flow, setFlow] = useState<FlowState | null>(null);
   const [editing, setEditing] = useState<keyof Facts | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // sessionStorage is only readable after mount.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setFlow(loadFlow() ?? { facts: emptyFacts(), detected_language: null, sensitive_data_ignored: false, evidence: [] });
+    setFlow(
+      loadFlow() ?? {
+        facts: emptyFacts(),
+        detected_language: null,
+        sensitive_data_ignored: false,
+        evidence: [],
+      },
+    );
   }, []);
   useEffect(() => {
-    if (editing) editorRef.current?.querySelector<HTMLElement>("input, select")?.focus();
+    if (editing)
+      editorRef.current?.querySelector<HTMLElement>("input, select")?.focus();
   }, [editing]);
 
-  if (!flow) return <p>{t("common.loading")}</p>;
+  if (!flow)
+    return (
+      <p role="status" aria-live="polite">
+        {t("common.loading")}
+      </p>
+    );
 
   const set = (k: keyof Facts, v: Facts[keyof Facts]) => {
     const next = { ...flow, facts: { ...flow.facts, [k]: v } };
@@ -65,7 +84,8 @@ export function FactConfirm() {
       </div>
       {flow.detected_language && (
         <p className="text-sm">
-          {t("confirm.detected")} <strong>{languageName(flow.detected_language, lang)}</strong>
+          {t("confirm.detected")}{" "}
+          <strong>{languageName(flow.detected_language, lang)}</strong>
         </p>
       )}
       {flow.sensitive_data_ignored && <Notice>{t("confirm.sensitive")}</Notice>}
@@ -75,24 +95,58 @@ export function FactConfirm() {
       </ul>
 
       {editing && (
-        <div id="fact-editor" ref={editorRef} className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <FactInput k={editing} value={flow.facts[editing]} onChange={(v) => set(editing, v)} />
-          <Button variant="outline" size="sm" onClick={() => setEditing(null)}>OK</Button>
+        <div
+          id="fact-editor"
+          ref={editorRef}
+          className="rounded-lg border border-border bg-card p-4 space-y-3"
+        >
+          <FactInput
+            k={editing}
+            value={flow.facts[editing]}
+            onChange={(v) => set(editing, v)}
+          />
+          <Button variant="outline" size="sm" onClick={() => setEditing(null)}>
+            OK
+          </Button>
         </div>
       )}
 
       {unknown.length > 0 && (
-        <details className="rounded-lg border border-border p-3" open={known.length === 0}>
+        <details
+          className="rounded-lg border border-border p-3"
+          open={known.length === 0}
+        >
           <summary className="cursor-pointer font-medium min-h-11 flex items-center">
-            {lang === "fr" ? `Ajouter d'autres renseignements (${unknown.length})` : `Add more details (${unknown.length})`}
+            {lang === "fr"
+              ? `Ajouter d'autres renseignements (${unknown.length})`
+              : `Add more details (${unknown.length})`}
           </summary>
           <ul className="flex flex-wrap gap-2 mt-2">{unknown.map(chip)}</ul>
         </details>
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Button size="lg" onClick={() => router.push("/results")}>{t("confirm.submit")}</Button>
-        <Button variant="ghost" onClick={() => { clearFlow(); router.push("/"); }}>{t("confirm.back")}</Button>
+        <Button
+          size="lg"
+          onClick={() => {
+            setSubmitting(true);
+            router.push("/results");
+          }}
+          disabled={submitting}
+          aria-busy={submitting}
+        >
+          {submitting ? t("common.loading") : t("confirm.submit")}
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            clearFlow();
+            router.push("/");
+          }}
+          disabled={submitting}
+        >
+          {t("confirm.back")}
+        </Button>
       </div>
     </div>
   );

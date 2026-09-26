@@ -14,9 +14,11 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { lang, t } = await getT();
+  // suppressHydrationWarning on <body>: browser extensions (e.g. Grammarly) add attributes
+  // to it before React hydrates. It only affects <body>'s own attributes, not its children.
   return (
     <html lang={lang === "fr" ? "fr-CA" : "en-CA"}>
-      <body className="min-h-screen flex flex-col">
+      <body className="min-h-screen flex flex-col" suppressHydrationWarning>
         <LangProvider lang={lang}>
           <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 bg-card px-3 py-2 rounded">
             {t("skip")}

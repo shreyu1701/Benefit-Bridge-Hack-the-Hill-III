@@ -1,0 +1,12 @@
+# HTTPS is automatic: Caddy gets and renews a Let's Encrypt certificate for SITE_DOMAIN.
+# (Browsers only allow the microphone on HTTPS, and Auth0 requires HTTPS in production.)
+{$SITE_DOMAIN} {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "microphone=(self), camera=(), geolocation=()"
+	}
+	reverse_proxy web:3000
+}

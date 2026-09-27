@@ -1,0 +1,80 @@
+# Production stack for one server (Vultr Toronto): Postgres + migrations + web + worker + Caddy (HTTPS).
+# Usage (on the server):  docker compose --env-file .env.production up -d --build
+# Settings and secrets live in .env.production (see deploy/env.production.example).
+
+name: benefit-bridge
+
+# Shared by migrate, web and worker: one image, built once (Compose caches the layers).
+x-app: &app
+  build: .
+  image: benefit-bridge:latest
+  env_file: .env.production
+  environment:
+    DATABASE_URL: postgres://benefit_bridge:${POSTGRES_PASSWORD}@db:5432/benefit_bridge
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: benefit_bridge
+      POSTGRES_USER: benefit_bridge
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U benefit_bridge -d benefit_bridge"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # No published port: only the app containers can reach the database.
+
+  migrate:
+    <<: *app
+    command: ["sh", "-c", "npx tsx scripts/migrate.ts && npx tsx scripts/seed.ts"]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    <<: *app
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://localhost:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    <<: *app
+    restart: unless-stopped
+    command: ["npx", "tsx", "worker/index.ts"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

@@ -41,6 +41,10 @@ const en = {
     "Voice input isn't available right now. You can type instead.",
   "home.llmUnavailable":
     "Automatic understanding is unavailable right now. Please fill in the short form.",
+  "home.llmQuota":
+    "Automatic understanding has reached its daily limit. You can check with your profile below, or try again later.",
+  "home.llmFailed":
+    "We couldn't understand that automatically. Try saying it a different way, or check with your profile below.",
 
   "confirm.title": "Is this right?",
   "confirm.help":
@@ -188,6 +192,10 @@ const fr: Record<MessageKey, string> = {
     "L'entrée vocale n'est pas disponible pour le moment. Vous pouvez écrire.",
   "home.llmUnavailable":
     "La compréhension automatique n'est pas disponible. Veuillez remplir le court formulaire.",
+  "home.llmQuota":
+    "La compréhension automatique a atteint sa limite quotidienne. Vous pouvez vérifier avec votre profil ci-dessous ou réessayer plus tard.",
+  "home.llmFailed":
+    "Nous n'avons pas pu comprendre automatiquement. Reformulez, ou vérifiez avec votre profil ci-dessous.",
 
   "confirm.title": "Est-ce exact?",
   "confirm.help":

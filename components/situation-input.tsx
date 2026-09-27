@@ -43,11 +43,19 @@ export function SituationInput({ profile }: { profile: Profile | null }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, profile }),
       });
-      if (res.status === 503) {
-        setError(t("home.llmUnavailable"));
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(
+          res.status === 429 && body.error === "llm_quota"
+            ? t("home.llmQuota")
+            : res.status === 503
+              ? t("home.llmUnavailable")
+              : body.error === "llm_invalid_output"
+                ? t("home.llmFailed")
+                : t("common.error"),
+        );
         return;
       }
-      if (!res.ok) throw new Error();
       const data: { detected_language: string; sensitive_data_ignored: boolean; evidence: { fact: string; quote: string }[]; diff: FactDiff } = await res.json();
       saveFlow({
         facts: data.diff.merged,

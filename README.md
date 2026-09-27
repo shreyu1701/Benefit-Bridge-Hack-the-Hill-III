@@ -45,6 +45,7 @@ browser's speech synthesis and voice input is disabled.
 npm test                                           # unit + ingestion + extraction pipeline tests (offline)
 TEST_DATABASE_URL=postgres://…/scratch npm test     # + Postgres integration (wipes that database!)
 LLM_LIVE=1 GEMINI_API_KEY=… npm run test:llm-live   # extraction cases in 5 languages against real Gemini
+npm run test:e2e                                   # Playwright: guest → onboarding → typed input → results, axe on every page (uses installed Chrome)
 npm run fixtures:refresh                           # save real LEGISinfo/canada.ca/ola.org responses as fixtures
 npm run typecheck && npm run lint && npm run build
 ```
@@ -56,12 +57,54 @@ npm run typecheck && npm run lint && npm run build
 | `DATABASE_URL` | yes (prod) | Tiger Data / PostgreSQL connection string (`sslmode=require` on Tiger Cloud) |
 | `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_EMBED_MODEL` | recommended | Fact extraction, translation, summaries, change-review drafts |
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_TTS_MODEL`, `ELEVENLABS_STT_MODEL` | optional | Voice input and multilingual read-aloud |
-| `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`, `APP_BASE_URL`, `AUTH0_CONNECTION=email` | optional | Passwordless sign-in for saved results and reviewers |
+| `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`, `AUTH0_SECRET`, `APP_BASE_URL` | optional | "Sign in with Google" (saved profiles) and reviewer accounts. All empty = everyone is a guest. |
+| `AUTH0_GOOGLE_CONNECTION` | optional | Auth0 connection name for Google (default `google-oauth2`) |
 | `ADMIN_EMAILS` | with Auth0 | Comma-separated reviewer emails (must be verified) |
 | `ADMIN_TOKEN` | dev only | Reviewer access without Auth0 (`x-admin-token` header or `bb_admin` cookie). Ignored in production. |
-| `SAVED_RESULTS_KEY` | for saving | 32-byte base64 key for AES-256-GCM encryption of saved facts |
+| `PROFILE_ENCRYPTION_KEY` | with Auth0 | 32-byte base64 key (`openssl rand -base64 32`) for AES-256-GCM encryption of saved profiles |
 | `FETCH_USER_AGENT`, `FETCH_MIN_INTERVAL_MS` | recommended | Identify the crawler (include contact info) and set the per-host rate limit |
 | `LEGISINFO_INTERVAL_MIN`, `OLA_INTERVAL_MIN` | optional | Tier 1 polling intervals (defaults 30 and 60) |
+
+## The user flow
+
+1. **Landing** (`/`) → **Get started**
+2. **Entry** (`/start`): **Sign in with Google** or **Continue as guest**. Nothing forces a login.
+3. **Onboarding** (`/onboarding`): 5 short screens (location, you, household, income and work, other), with "Prefer not to say" on every question and the tax-filing question at the end.
+4. **Describe** (`/describe`): speak or type in any language. Audio goes to `/api/transcribe` (ElevenLabs, server-side); text and profile go to `/api/extract` (Gemini extraction plus a deterministic diff against the profile).
+5. **Confirm** (`/confirm`): each chip says "From your profile" or "From what you said". Disagreements are asked about, and **Update my profile** saves the confirmed facts.
+6. **Results** (`/results`): the rules engine (no AI) groups results by federal, Ontario and Toronto, each with confidence and sources. **Listen** uses `/api/speak` (ElevenLabs).
+
+**One schema:** `lib/profile/schema.ts#ProfileSchema` validates onboarding screens (`pick`), the profile API, and extraction output. Gemini's structured-output schema is generated from it with `z.toJSONSchema`, so they can't drift apart.
+
+**Where a profile lives:**
+- **Guests:** `sessionStorage`, gone when the tab closes.
+- **Signed-in users:** the `profiles` table, AES-256-GCM encrypted with `PROFILE_ENCRYPTION_KEY`. `/account` has **Delete my account**, which deletes the profile row, then the user row, then logs out.
+
+## Sign in with Google (Auth0)
+
+1. **Create the application.** In Auth0, create a **Regular Web Application**. Set:
+   - **Allowed Callback URLs:** `http://localhost:3000/auth/callback` (plus your production URL)
+   - **Allowed Logout URLs:** `http://localhost:3000` (no trailing slash; it must match `APP_BASE_URL`)
+   - **Allowed Web Origins:** `http://localhost:3000` (without it, sessions don't survive a page refresh)
+2. **Enable Google.** Go to **Authentication → Social → Google** and enable it for the application. The app links straight to it (`/auth/login?connection=google-oauth2`), so users never see the Auth0 login screen.
+3. **Use your own Google keys before any demo.** Replace Auth0's Google dev keys with your own Google OAuth client (Google Cloud Console → Credentials → OAuth client ID, redirect URI `https://YOUR_TENANT.auth0.com/login/callback`). Auth0's dev keys show a warning screen and have rate limits.
+4. **Set the environment variables:**
+   - `AUTH0_DOMAIN`: the tenant domain, without `https://`
+   - `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`
+   - `AUTH0_SECRET`: **exactly 64 hex characters** (`openssl rand -hex 32`)
+   - `APP_BASE_URL`
+   - `PROFILE_ENCRYPTION_KEY`
+
+   Then run `npm run db:migrate` and restart `npm run dev`.
+
+**In the app:**
+- **Header:** shows **Log in** for guests, or your initials (linking to `/account`) and **Log out** when signed in.
+- **`/start`:** offers **Sign in with Google** (straight to Google) and **Log in or sign up with email** (Auth0 Universal Login).
+- **Routes:** everything under `/auth/*` is mounted by `proxy.ts`: `/auth/login`, `/auth/logout`, `/auth/callback`, `/auth/profile`, `/auth/access-token`, `/auth/backchannel-logout`.
+
+**Troubleshooting:**
+- **`JWEDecryptionFailed`:** `AUTH0_SECRET` changed or isn't 64 hex characters. Fix it, clear localhost cookies, then restart.
+- **404 on `/auth/login`:** Auth0 isn't configured (all four `AUTH0_*` values must be set) or the dev server wasn't restarted.
 
 ## How the freshness tiers work
 

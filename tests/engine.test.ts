@@ -7,7 +7,8 @@ import type { Logic } from "@/lib/rules/types";
 import { PERSONAS } from "@/data/personas";
 
 const P = (id: string) => SEED_PROGRAMS.find((p) => p.id === id)!;
-const facts = (f: Partial<Facts>): Facts => ({ ...emptyFacts(), ...f });
+// These tests are about other rules, so they assume the person files taxes; see "tax filing" below.
+const facts = (f: Partial<Facts>): Facts => ({ ...emptyFacts(), files_taxes: true, ...f });
 
 describe("tri-state logic evaluation", () => {
   it("reports unknown instead of evaluating a comparison on a missing variable", () => {
@@ -189,6 +190,33 @@ describe("jurisdiction scoping", () => {
   it("Fair Pass narrow miss: age 65", () => {
     const r = matchProgram(P("to-fair-pass"), facts({ province: "ON", city: "Toronto", age: 65, household_size: 1, family_income_band: "under_15k" }));
     expect(r.confidence).toBe("not_eligible");
+  });
+});
+
+describe("tax filing (benefits paid through the tax system)", () => {
+  const ccb = P("ca-ccb");
+  const parent = (files_taxes: boolean | null) => facts({ children_ages: [2], residency_status: "citizen", files_taxes });
+
+  it("filed → the tax criterion is met", () => {
+    expect(matchProgram(ccb, parent(true)).confidence).toBe("likely");
+  });
+
+  it("not filed → possibly eligible with a 'file a tax return' check, never 'not eligible'", () => {
+    const r = matchProgram(ccb, parent(false));
+    expect(r.confidence).toBe("possibly");
+    expect(r.criteria.find((c) => c.id === "files_tax_return")!.outcome).toBe("data_gap");
+    expect(r.uncertain.join(" ")).toMatch(/File a tax return/);
+  });
+
+  it("unknown → we ask the question", () => {
+    const r = matchProgram(ccb, parent(null));
+    expect(r.confidence).toBe("possibly");
+    expect(r.missing_facts).toContain("files_taxes");
+  });
+
+  it("programs not paid through taxes ignore it", () => {
+    const r = matchProgram(P("on-child-care-fee-reduction"), facts({ province: "ON", children_ages: [2], files_taxes: false }));
+    expect(r.confidence).toBe("likely");
   });
 });
 

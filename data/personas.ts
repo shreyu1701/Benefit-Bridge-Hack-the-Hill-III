@@ -29,6 +29,7 @@ const base: Facts = {
   has_dental_insurance: null,
   housing: null,
   receives_social_assistance: false,
+  files_taxes: true,
 };
 
 export const PERSONAS: Persona[] = [

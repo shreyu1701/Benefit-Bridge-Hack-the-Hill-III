@@ -1,13 +1,6 @@
 import { z } from "zod";
-import {
-  EMPLOYMENT_STATUSES,
-  HOUSING,
-  INCOME_BAND_IDS,
-  INCOME_BANDS,
-  PROVINCES,
-  RESIDENCY_STATUSES,
-  STUDENT_STATUSES,
-} from "@/lib/facts/schema";
+import { INCOME_BANDS, ProfileSchema } from "@/lib/profile/schema";
+import { toGeminiSchema } from "./json-schema";
 
 /**
  * LLM prompt contracts. Each task has:
@@ -27,35 +20,15 @@ const str = { type: "string" };
 // 1. Fact extraction
 // ---------------------------------------------------------------------------
 
+const EXTRACT_FACTS_SCHEMA = toGeminiSchema(ProfileSchema);
+
 export const EXTRACT_FACTS_JSON_SCHEMA = {
   type: "object",
   properties: {
     detected_language: { type: "string", description: "BCP-47 code of the user's input language, e.g. 'en', 'fr', 'es', 'zh', 'ar', 'pa'" },
-    facts: {
-      type: "object",
-      properties: {
-        province: nullable({ type: "string", enum: [...PROVINCES] }),
-        city: nullable(str),
-        age: nullable({ type: "integer", minimum: 0, maximum: 120 }),
-        has_partner: nullable({ type: "boolean" }),
-        children_ages: nullable({ type: "array", items: { type: "integer", minimum: 0, maximum: 25 } }),
-        household_size: nullable({ type: "integer", minimum: 1, maximum: 20 }),
-        family_income_band: nullable({ type: "string", enum: [...INCOME_BAND_IDS] }),
-        residency_status: nullable({ type: "string", enum: [...RESIDENCY_STATUSES] }),
-        years_in_canada: nullable({ type: "number", minimum: 0, maximum: 120 }),
-        employment_status: nullable({ type: "string", enum: [...EMPLOYMENT_STATUSES] }),
-        disability: nullable({ type: "boolean" }),
-        student_status: nullable({ type: "string", enum: [...STUDENT_STATUSES] }),
-        has_dental_insurance: nullable({ type: "boolean" }),
-        housing: nullable({ type: "string", enum: [...HOUSING] }),
-        receives_social_assistance: nullable({ type: "boolean" }),
-      },
-      required: [
-        "province", "city", "age", "has_partner", "children_ages", "household_size", "family_income_band",
-        "residency_status", "years_in_canada", "employment_status", "disability", "student_status",
-        "has_dental_insurance", "housing", "receives_social_assistance",
-      ],
-    },
+    // Generated from the one ProfileSchema, so extraction can never drift from
+    // onboarding or storage. Every key is required but nullable: null = "not stated".
+    facts: EXTRACT_FACTS_SCHEMA,
     evidence: {
       type: "array",
       description: "For each non-null fact, the short span of the user's text it came from",
@@ -64,7 +37,7 @@ export const EXTRACT_FACTS_JSON_SCHEMA = {
     sensitive_data_ignored: { type: "boolean", description: "true if the user volunteered SIN, exact income, or document numbers that were NOT extracted" },
   },
   required: ["detected_language", "facts", "evidence", "sensitive_data_ignored"],
-} as const;
+};
 
 /** Lenient validator: invalid individual fact values are coerced to null later (see extract.ts). */
 export const ExtractFactsOutput = z.object({
@@ -93,6 +66,7 @@ Rules:
 - years_in_canada: numeric years (months ÷ 12). "born here" → equal to age if age is known, otherwise null.
 - employment_status: "part-time"/"full-time job" → employed. "retired" → retired. "looking for work"/"laid off" → unemployed.
 - student_status: college/university/post-secondary → post_secondary_full_time unless they say part-time.
+- files_taxes: true only if they say they filed (or "did my taxes") for last year; false if they say they didn't; otherwise null.
 - If the person includes a Social Insurance Number, exact income figures to the dollar, or immigration document numbers, do not copy them anywhere in your output; set sensitive_data_ignored to true. (You may still pick the income band.)
 - evidence: for every non-null fact, include a short quote from the input that supports it.`;
 

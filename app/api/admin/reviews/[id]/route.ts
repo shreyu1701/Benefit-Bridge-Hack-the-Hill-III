@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdmin } from "@/lib/auth0";
 import { approveReview, rejectReview, ReviewError } from "@/lib/db/reviews";
 import { errorResponse, json } from "@/lib/http";
 

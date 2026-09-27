@@ -12,7 +12,7 @@ flowchart LR
   subgraph Web["Next.js server (Vultr Toronto)"]
     EX[/api/extract/]
     MA[/api/match/]
-    TTS[/api/tts · /api/stt/]
+    TTS[/api/speak · /api/transcribe/]
     AD[/api/admin/reviews/]
     ENG[[Rules engine<br/>json-logic-js · deterministic]]
   end
@@ -196,7 +196,7 @@ Output: `{ summary, affected_fields[], evidence_quotes[], suggested_rule_changes
 
 ## 6. Privacy and security
 
-- **No raw text or audio is stored or logged.** `/api/extract` and `/api/stt` process
+- **No raw text or audio is stored or logged.** `/api/extract` and `/api/transcribe` process
   input in memory.
 - **Client state lives in `sessionStorage`** and disappears when the tab closes.
 - **`match_events` holds only:** `program_id`, the jurisdiction-level region, the

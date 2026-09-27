@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { GeminiClient, type LlmClient } from "@/lib/llm/client";
 import { extractFacts, scrubSensitive } from "@/lib/llm/tasks";
 import { EXTRACT_FACTS_JSON_SCHEMA } from "@/lib/llm/contracts";
+import { PROFILE_KEYS } from "@/lib/profile/schema";
 import type { Facts } from "@/lib/facts/schema";
 
 /**
@@ -165,8 +166,10 @@ describe("sensitive-data scrubbing", () => {
     expect(scrubSensitive("I am 34 with 2 kids, earn 45000").scrubbed).toBe(false);
   });
 
-  it("the JSON schema sent to Gemini requires every fact key (nullable)", () => {
-    expect(EXTRACT_FACTS_JSON_SCHEMA.properties.facts.required).toHaveLength(15);
+  it("the JSON schema sent to Gemini is generated from ProfileSchema and requires every key", () => {
+    const facts = EXTRACT_FACTS_JSON_SCHEMA.properties.facts as { required: string[]; properties: Record<string, unknown> };
+    expect(facts.required.sort()).toEqual([...PROFILE_KEYS].sort());
+    expect(Object.keys(facts.properties).sort()).toEqual([...PROFILE_KEYS].sort());
   });
 });
 

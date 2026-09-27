@@ -27,7 +27,7 @@ export function ListenButton({ text, lang }: { text: string; lang: string }) {
   async function play() {
     setState("loading");
     try {
-      const res = await fetch("/api/tts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const res = await fetch("/api/speak", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
       if (!res.ok) throw new Error();
       const url = URL.createObjectURL(await res.blob());
       const a = new Audio(url);

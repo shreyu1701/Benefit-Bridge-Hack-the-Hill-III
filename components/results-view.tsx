@@ -112,11 +112,13 @@ export function ResultsView() {
   return (
     <div className="space-y-8" lang={data.lang}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h1 className="text-2xl font-bold">{t("results.title")}</h1>
+        <h1 className="font-display text-3xl sm:text-4xl tracking-tight">{t("results.title")}</h1>
         <Link href="/confirm" className="underline text-primary">
           {t("results.edit")}
         </Link>
       </div>
+
+      <Notice>{t("disclaimer")}</Notice>
 
       {data.machine_translated && (
         <Notice tone="info">{t("results.machineTranslated")}</Notice>

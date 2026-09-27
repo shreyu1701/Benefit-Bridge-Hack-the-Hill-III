@@ -42,6 +42,14 @@ export const FACT_META: Record<keyof Facts, { label: L; question: L; help?: L }>
     label: { en: "Ontario Works / ODSP", fr: "Ontario au travail / POSPH" },
     question: { en: "Do you get Ontario Works or ODSP now?", fr: "Recevez-vous Ontario au travail ou le POSPH?" },
   },
+  files_taxes: {
+    label: { en: "Filed taxes last year", fr: "Déclaration d'impôts l'an dernier" },
+    question: { en: "Did you file a tax return last year?", fr: "Avez-vous produit une déclaration de revenus l'an dernier?" },
+    help: {
+      en: "Most benefits are paid through your tax return, even if you had no income. You can still file for past years.",
+      fr: "La plupart des prestations passent par la déclaration de revenus, même sans revenu. Vous pouvez encore produire pour les années passées.",
+    },
+  },
 };
 
 export const ENUM_LABELS: Record<string, L> = {
@@ -104,6 +112,7 @@ export function formatFact(key: keyof Facts, value: Facts[keyof Facts], lang: Ui
     case "disability":
     case "has_dental_insurance":
     case "receives_social_assistance":
+    case "files_taxes":
       return value ? yes : no;
     case "years_in_canada":
       return `${Math.round((value as number) * 10) / 10}`;

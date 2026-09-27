@@ -4,7 +4,7 @@ import { hasVoice, speechToText } from "@/lib/voice";
 
 const MAX_BYTES = 10 * 1024 * 1024;
 
-/** POST /api/stt (multipart: audio) → { text, language_code }. Audio is never stored. */
+/** POST /api/transcribe (multipart: audio from MediaRecorder) → { text, language_code }. ElevenLabs runs here, server-side, so the key never reaches the browser. Audio is never stored. */
 export async function POST(req: Request) {
   if (!hasVoice()) return json({ error: "voice_unavailable" }, { status: 503 });
   if (!rateLimit("stt:" + clientKey(req), 6)) return json({ error: "rate_limited" }, { status: 429 });

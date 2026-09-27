@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { ArrowDown, FileCheck2, Landmark, Lock, MessageSquareText, RefreshCw, ShieldCheck } from "lucide-react";
-import { SituationInput } from "@/components/situation-input";
+import Link from "next/link";
+import { ArrowRight, ExternalLink, FileCheck2, Landmark, Lock, MessageSquareText, RefreshCw, ShieldCheck } from "lucide-react";
+import { SEED_PROGRAMS } from "@/data/programs";
 import { LANDING } from "@/lib/i18n/landing";
 import { getUiLang } from "@/lib/i18n/server";
 
@@ -15,10 +16,13 @@ const TRUST_ICONS = [Landmark, RefreshCw, Lock, MessageSquareText];
 export default async function Home() {
   const lang = await getUiLang();
   const c = LANDING[lang];
+  const examples = c.examples.ids.map((id) => SEED_PROGRAMS.find((p) => p.id === id)!).filter(Boolean);
+  const cta =
+    "inline-flex min-h-14 items-center justify-center gap-2.5 rounded-[14px] bg-primary px-8 text-lg font-semibold text-primary-foreground no-underline hover:bg-primary-hover";
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-8">
-      {/* Hero + start panel */}
+      {/* Hero */}
       <section aria-labelledby="hero" className="pt-11 sm:pt-24">
         <div className="mx-auto max-w-[820px] sm:text-center">
           <p className="inline-flex items-center gap-2 rounded-full border border-primary-soft-border bg-primary-soft px-3.5 py-1.5 text-[13px] font-medium text-primary-soft-fg">
@@ -29,10 +33,34 @@ export default async function Home() {
             {c.hero.headline}
           </h1>
           <p className="mx-auto mt-5 max-w-[620px] text-[17px] sm:text-xl leading-relaxed text-muted">{c.hero.sub}</p>
+          <div className="mt-8 sm:mt-10 flex flex-col items-start gap-3 sm:items-center">
+            <Link href="/start" className={cta}>
+              {c.hero.cta} <ArrowRight aria-hidden size={20} />
+            </Link>
+            <p className="text-sm text-muted">{c.hero.ctaNote}</p>
+          </div>
         </div>
-        <div className="mt-8 sm:mt-12">
-          <SituationInput centered />
+      </section>
+
+      {/* Three example benefits, straight from the program data (amounts and links are the cited ones) */}
+      <section aria-labelledby="examples-h" className="mt-16 sm:mt-24 space-y-5">
+        <div>
+          <h2 id="examples-h" className="font-display text-[28px] sm:text-4xl tracking-tight">{c.examples.heading}</h2>
+          <p className="mt-1 text-muted">{c.examples.help}</p>
         </div>
+        <ul className="grid gap-3 md:grid-cols-3">
+          {examples.map((p) => (
+            <li key={p.id} className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+              <h3 className="text-[17px] font-semibold">{p.name[lang]}</h3>
+              <p className="text-[15px] leading-relaxed text-muted">{p.summaries_by_language[lang]}</p>
+              {p.benefit_amount && <p className="text-[15px] leading-relaxed">{p.benefit_amount.text[lang]}</p>}
+              <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex min-h-11 items-center gap-1.5 font-medium text-primary underline">
+                {c.examples.source} <ExternalLink aria-hidden size={14} />
+                <span className="sr-only">{lang === "fr" ? "(nouvel onglet)" : "(opens in a new tab)"}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
       </section>
 
       {/* Trust strip */}
@@ -100,12 +128,9 @@ export default async function Home() {
       <section aria-labelledby="final-h" className="mt-20 rounded-3xl border border-border bg-surface px-6 py-10 sm:px-14 sm:py-14 text-center">
         <h2 id="final-h" className="mx-auto max-w-2xl font-display text-[28px] sm:text-[40px] leading-tight tracking-tight">{c.cta.headline}</h2>
         <p className="mx-auto mt-3 max-w-xl text-muted">{c.cta.body}</p>
-        <a
-          href="#situation"
-          className="mt-6 inline-flex min-h-13 items-center justify-center gap-2.5 rounded-[14px] bg-primary px-6 font-semibold text-primary-foreground no-underline hover:bg-primary-hover"
-        >
-          {c.cta.button} <ArrowDown aria-hidden size={18} />
-        </a>
+        <Link href="/start" className={`mt-6 ${cta}`}>
+          {c.cta.button} <ArrowRight aria-hidden size={20} />
+        </Link>
         <p className="mt-4 text-sm text-muted">{c.cta.fine}</p>
       </section>
     </div>

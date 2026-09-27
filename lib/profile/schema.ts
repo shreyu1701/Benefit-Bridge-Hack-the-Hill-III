@@ -1,7 +1,13 @@
 import { z } from "zod";
 
 /**
- * Structured facts about a person's situation.
+ * THE profile schema — the single source of truth for a person's situation.
+ *
+ * Used by: onboarding forms (per-screen `pick`), the profile API (validation of
+ * stored and submitted profiles), Gemini fact extraction (its JSON schema is
+ * generated from this with `z.toJSONSchema`, see lib/llm/contracts.ts), and the
+ * rules engine (lib/facts/derive.ts). Add a field here and every one of them
+ * sees it; nothing is redeclared elsewhere.
  *
  * Design rules:
  *  - `null` always means "unknown". The rules engine never guesses a value for
@@ -64,7 +70,7 @@ export const INCOME_BANDS = [
 export type IncomeBandId = (typeof INCOME_BANDS)[number]["id"];
 export const INCOME_BAND_IDS = INCOME_BANDS.map((b) => b.id) as [IncomeBandId, ...IncomeBandId[]];
 
-export const FactsSchema = z.object({
+export const ProfileSchema = z.object({
   province: z.enum(PROVINCES).nullable(),
   city: z.string().trim().max(80).nullable(),
   age: z.number().int().min(0).max(120).nullable(),
@@ -82,19 +88,30 @@ export const FactsSchema = z.object({
   has_dental_insurance: z.boolean().nullable(),
   housing: z.enum(HOUSING).nullable(),
   receives_social_assistance: z.boolean().nullable(),
+  /** Filed a tax return for last year. Most federal and Ontario benefits are paid through the tax system. */
+  files_taxes: z.boolean().nullable(),
 });
-export type Facts = z.infer<typeof FactsSchema>;
+export type Profile = z.infer<typeof ProfileSchema>;
+export type ProfileKey = keyof Profile;
 
-export const FACT_KEYS = Object.keys(FactsSchema.shape) as (keyof Facts)[];
+export const PROFILE_KEYS = Object.keys(ProfileSchema.shape) as ProfileKey[];
 
-export function emptyFacts(): Facts {
-  return Object.fromEntries(FACT_KEYS.map((k) => [k, null])) as Facts;
+export function emptyProfile(): Profile {
+  return Object.fromEntries(PROFILE_KEYS.map((k) => [k, null])) as Profile;
 }
 
-/** Parse loosely: missing keys become null. Throws on invalid values. */
-export function parseFacts(input: unknown): Facts {
-  const base = emptyFacts();
+/** Parse loosely: missing keys become null, unknown keys are dropped. Throws on invalid values. */
+export function parseProfile(input: unknown): Profile {
+  const base = emptyProfile();
   const obj = (input && typeof input === "object" ? input : {}) as Record<string, unknown>;
   const merged = { ...base, ...Object.fromEntries(Object.entries(obj).filter(([k]) => k in base)) };
-  return FactsSchema.parse(merged);
+  return ProfileSchema.parse(merged);
 }
+
+// Engine-side names. "Facts" and "profile" are the same shape: a profile is the
+// facts a person chose to keep; facts are what one check runs on.
+export const FactsSchema = ProfileSchema;
+export type Facts = Profile;
+export const FACT_KEYS = PROFILE_KEYS;
+export const emptyFacts = emptyProfile;
+export const parseFacts = parseProfile;

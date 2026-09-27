@@ -24,7 +24,11 @@ describe.skipIf(!URL_)("database integration", () => {
   beforeAll(async () => {
     process.env.DATABASE_URL = URL_;
     const env = { ...process.env, DATABASE_URL: URL_ };
-    execSync(`psql "${URL_}" -q -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"`, { env });
+    const { Client } = await import("pg");
+    const wipe = new Client({ connectionString: URL_ });
+    await wipe.connect();
+    await wipe.query("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+    await wipe.end();
     execSync("npx tsx scripts/migrate.ts && npx tsx scripts/seed.ts", { env, stdio: "pipe" });
     mods = {
       pool: await import("@/lib/db/pool"),
@@ -94,12 +98,31 @@ describe.skipIf(!URL_)("database integration", () => {
     }
   });
 
+  it("stores the profile encrypted, reads it back, and deletes profile then user", async () => {
+    process.env.PROFILE_ENCRYPTION_KEY = Buffer.alloc(32, 3).toString("base64");
+    const profiles = await import("@/lib/db/profiles");
+    const { emptyProfile } = await import("@/lib/profile/schema");
+    const id = await profiles.upsertUser("google-oauth2|test", "person@example.org");
+    expect(await profiles.upsertUser("google-oauth2|test", null)).toBe(id); // idempotent, email kept
+    const profile = { ...emptyProfile(), residency_status: "refugee_claimant" as const, family_income_band: "15k_25k" as const };
+    await profiles.saveProfile(id, profile);
+
+    const [row] = await mods.pool.query<{ encrypted_data: Buffer }>(`SELECT encrypted_data FROM profiles WHERE user_id = $1`, [id]);
+    expect(row.encrypted_data.toString("utf8")).not.toContain("refugee_claimant"); // encrypted at rest
+    expect(await profiles.getProfile(id)).toEqual(profile);
+
+    expect(await profiles.deleteAccount("google-oauth2|test")).toBe(true);
+    expect(await mods.pool.query(`SELECT 1 FROM users WHERE id = $1`, [id])).toHaveLength(0);
+    expect(await mods.pool.query(`SELECT 1 FROM profiles WHERE user_id = $1`, [id])).toHaveLength(0);
+    expect(await profiles.deleteAccount("google-oauth2|test")).toBe(false);
+  });
+
   it("the match API uses DB programs and records only anonymous events", async () => {
     const { POST } = await import("@/app/api/match/route");
     const res = await POST(
       new Request("http://x/api/match", {
         method: "POST",
-        body: JSON.stringify({ facts: { province: "ON", city: "Toronto", family_income_band: "25k_35k", has_dental_insurance: false }, lang: "en" }),
+        body: JSON.stringify({ facts: { province: "ON", city: "Toronto", family_income_band: "25k_35k", has_dental_insurance: false, files_taxes: true }, lang: "en" }),
       }),
     );
     const body = await res.json();

@@ -5,7 +5,7 @@ import { hasVoice, textToSpeech } from "@/lib/voice";
 
 const Body = z.object({ text: z.string().trim().min(1).max(1500) });
 
-/** POST /api/tts { text } → audio/mpeg stream (multilingual voice). */
+/** POST /api/speak { text } → audio/mpeg stream (ElevenLabs multilingual TTS, server-side). */
 export async function POST(req: Request) {
   if (!hasVoice()) return json({ error: "voice_unavailable" }, { status: 503 });
   if (!rateLimit("tts:" + clientKey(req), 20)) return json({ error: "rate_limited" }, { status: 429 });

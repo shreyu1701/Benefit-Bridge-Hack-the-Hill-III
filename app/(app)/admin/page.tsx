@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ReviewQueue } from "@/components/review-queue";
 import { Notice } from "@/components/ui/notice";
-import { auth0Enabled, currentActor } from "@/lib/auth";
+import { auth0Enabled, currentActor } from "@/lib/auth0";
 
 export const metadata: Metadata = { title: "Review queue", robots: { index: false } };
 export const dynamic = "force-dynamic";

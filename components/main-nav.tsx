@@ -4,7 +4,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
+import { AccountControl } from "@/components/auth-buttons";
 import { LangToggle } from "@/components/lang-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { useT } from "@/components/lang-provider";
 import type { MessageKey } from "@/lib/i18n/messages";
 import { cn } from "@/lib/utils";
@@ -13,14 +15,15 @@ import { cn } from "@/lib/utils";
  * Main navigation. Each item lists the route prefixes it "owns", so the
  * benefits link stays marked as current through the whole check flow
  * (form → confirm → results → checklist → program details).
- * Below the lg breakpoint the links collapse into a menu button.
+ * Below the xl breakpoint the links collapse into a menu button.
  */
 const ITEMS: { href: string; label: MessageKey; match: string[] }[] = [
   { href: "/", label: "nav.landing", match: [] },
-  { href: "/start", label: "nav.home", match: ["/start", "/confirm", "/results", "/checklist", "/programs"] },
+  { href: "/start", label: "nav.home", match: ["/start", "/onboarding", "/describe", "/confirm", "/results", "/checklist", "/programs"] },
   { href: "/laws", label: "nav.laws", match: ["/laws"] },
   { href: "/insights", label: "nav.insights", match: ["/insights"] },
   { href: "/privacy", label: "nav.privacy", match: ["/privacy"] },
+  { href: "/account", label: "nav.account", match: ["/account"] },
 ];
 
 function isActive(pathname: string, item: (typeof ITEMS)[number]) {
@@ -28,7 +31,7 @@ function isActive(pathname: string, item: (typeof ITEMS)[number]) {
   return item.match.some((m) => pathname === m || pathname.startsWith(m + "/"));
 }
 
-export function MainNav() {
+export function MainNav({ authEnabled = false, signedIn = false }: { authEnabled?: boolean; signedIn?: boolean }) {
   const t = useT();
   const pathname = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
@@ -70,12 +73,20 @@ export function MainNav() {
 
   return (
     <nav aria-label="Main" className="flex items-center gap-2">
-      <ul className="hidden lg:flex items-center gap-1">{links(false)}</ul>
+      <ul className="hidden xl:flex items-center gap-1">{links(false)}</ul>
+      <div className="hidden xl:block">
+        <ThemeToggle />
+      </div>
       <LangToggle />
+      {authEnabled && (
+        <div className="hidden sm:block">
+          <AccountControl compact signedIn={signedIn} />
+        </div>
+      )}
       <button
         ref={buttonRef}
         type="button"
-        className="lg:hidden inline-flex size-11 items-center justify-center rounded-full hover:bg-surface"
+        className="xl:hidden inline-flex size-11 items-center justify-center rounded-full hover:bg-surface"
         aria-expanded={open}
         aria-controls={menuId}
         aria-label={open ? t("nav.closeMenu") : t("nav.openMenu")}
@@ -83,13 +94,21 @@ export function MainNav() {
       >
         {open ? <X aria-hidden size={22} /> : <Menu aria-hidden size={22} />}
       </button>
-      <ul
+      <div
         id={menuId}
         hidden={!open}
-        className="lg:hidden absolute left-0 right-0 top-full z-40 border-b border-border bg-background px-4 py-2 shadow-lg"
+        className="xl:hidden absolute left-0 right-0 top-full z-40 border-b border-border bg-background px-4 py-2 shadow-lg"
       >
-        {links(true)}
-      </ul>
+        <ul>{links(true)}</ul>
+        {authEnabled && (
+          <div className="border-t border-border px-1 py-2 sm:hidden">
+            <AccountControl signedIn={signedIn} />
+          </div>
+        )}
+        <div className="border-t border-border px-3 py-3">
+          <ThemeToggle showLabels />
+        </div>
+      </div>
     </nav>
   );
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { AuthError } from "@/lib/auth";
+import { AuthError } from "@/lib/auth0";
 import { LlmOutputError, LlmUnavailableError } from "@/lib/llm/client";
 
 export function json<T>(data: T, init?: ResponseInit) {

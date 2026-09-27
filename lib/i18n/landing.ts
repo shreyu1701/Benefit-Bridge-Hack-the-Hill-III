@@ -14,16 +14,13 @@ export interface StartCopy {
   anyLanguage: string;
   tryLabel: string;
   examples: string[];
-  tilesHeading: string;
-  tilesHelp: string;
-  province: string;
-  provinceNote: string;
-  tiles: { id: "newcomer" | "student" | "family" | "senior" | "worker"; title: string; sub: string; starter: string }[];
+  profileOnly: string;
 }
 
 export interface LandingCopy {
   meta: { title: string; description: string };
-  hero: { badge: string; headline: string; sub: string };
+  hero: { badge: string; headline: string; sub: string; cta: string; ctaNote: string };
+  examples: { heading: string; help: string; source: string; ids: string[] };
   start: StartCopy;
   trust: Item[];
   features: { heading: string; items: Item[] };
@@ -42,6 +39,8 @@ const en: LandingCopy = {
     badge: "Federal, Ontario and Toronto programs, from official sources",
     headline: "Find the support you're entitled to.",
     sub: "Describe your situation in your own words, in any language. We check it against 11 federal, Ontario and Toronto benefits and show which ones you may qualify for, with the official page for each.",
+    cta: "Get started",
+    ctaNote: "Five short screens, then describe your situation. No account needed.",
   },
   start: {
     label: "Tell us about your situation",
@@ -49,22 +48,18 @@ const en: LandingCopy = {
     anyLanguage: "Any language works",
     tryLabel: "Try:",
     examples: ["I just moved to Ontario as a student", "Single parent in Toronto, 2 kids under 6", "I'm 67 and live alone in Toronto"],
-    tilesHeading: "Or start with what fits you",
-    tilesHelp: "Pick one to add a starting sentence, then finish it in your own words.",
-    province: "Province or territory",
-    provinceNote: "Ontario and Toronto programs only apply in Ontario. Elsewhere you'll see federal programs.",
-    tiles: [
-      { id: "newcomer", title: "Newcomer", sub: "Child benefit, dental, status rules", starter: "I'm new to Canada. I arrived " },
-      { id: "student", title: "Student", sub: "OSAP grants and loans", starter: "I'm a college or university student. " },
-      { id: "family", title: "Family", sub: "Child benefit, child care, dental", starter: "I have children aged " },
-      { id: "senior", title: "Senior", sub: "OAS, GIS, dental", starter: "I'm 65 or older. " },
-      { id: "worker", title: "Low-income worker", sub: "Workers benefit, TTC discount", starter: "I work and earn about " },
-    ],
+    profileOnly: "Skip this and check with my profile only",
+  },
+  examples: {
+    heading: "Three benefits people often miss",
+    help: "Amounts and rules come from the official pages linked below.",
+    source: "Official page",
+    ids: ["ca-ccb", "ca-cdcp", "to-fair-pass"],
   },
   trust: [
     { title: "Official sources only", body: "Every result links to the federal, Ontario or Toronto page it came from." },
     { title: "Checked every 6 to 24 hours", body: "Each program shows when a person last verified it and when the official page last changed." },
-    { title: "Private by default", body: "No account needed. We don't store what you tell us." },
+    { title: "Private by default", body: "No account needed. We never store what you type or say. Saving a profile is optional and encrypted." },
     { title: "Plain language", body: "Rules and bills explained in a few sentences, not forty pages." },
   ],
   features: {
@@ -104,13 +99,13 @@ const en: LandingCopy = {
       { q: "Why does a result say \"Possibly eligible\"?", a: "Either we're missing one detail, like your household size, or the government doesn't publish the exact limit. We tell you exactly what to check rather than guess." },
       { q: "Why did the GST/HST credit change names?", a: "As of July 2026, the CRA calls it the Canada Groceries and Essentials Benefit. We use the current name and mention the old one." },
       { q: "Does it cover new laws that might affect me?", a: "Yes. The Recent laws page tracks federal and Ontario bills, shows each bill's stage and timeline, and highlights bills that recently became law." },
-      { q: "Do I need an account?", a: "No. Sign-in is only needed if you choose to save your results. Even then, only your answers are stored, and they are encrypted." },
+      { q: "Do I need an account?", a: "No. Continue as a guest and your answers stay in your browser tab. Sign in with Google only if you want to save your profile; it is stored encrypted, and you can delete your account at any time." },
     ],
   },
   cta: {
     headline: "See what you may be missing before the next deadline",
     body: "Write or say a few sentences about your life. You'll get a list of federal, Ontario and Toronto benefits with official links and what to do next.",
-    button: "Describe my situation",
+    button: "Get started",
     fine: "No account · No SIN · Any language · Not legal or financial advice",
   },
 };
@@ -125,6 +120,8 @@ const fr: LandingCopy = {
     badge: "Programmes fédéraux, ontariens et torontois, de sources officielles",
     headline: "Trouvez l'aide à laquelle vous avez droit.",
     sub: "Décrivez votre situation dans vos mots, dans n'importe quelle langue. Nous la comparons à 11 prestations fédérales, ontariennes et torontoises et vous montrons celles auxquelles vous pourriez avoir droit, avec la page officielle de chacune.",
+    cta: "Commencer",
+    ctaNote: "Cinq courts écrans, puis décrivez votre situation. Aucun compte requis.",
   },
   start: {
     label: "Parlez-nous de votre situation",
@@ -132,22 +129,18 @@ const fr: LandingCopy = {
     anyLanguage: "Toutes les langues fonctionnent",
     tryLabel: "Essayez :",
     examples: ["Je viens d'arriver en Ontario pour étudier", "Parent seul à Toronto, 2 enfants de moins de 6 ans", "J'ai 67 ans et je vis seul à Toronto"],
-    tilesHeading: "Ou commencez par ce qui vous ressemble",
-    tilesHelp: "Choisissez-en un pour ajouter un début de phrase, puis terminez-la dans vos mots.",
-    province: "Province ou territoire",
-    provinceNote: "Les programmes de l'Ontario et de Toronto ne s'appliquent qu'en Ontario. Ailleurs, vous verrez les programmes fédéraux.",
-    tiles: [
-      { id: "newcomer", title: "Nouvel arrivant", sub: "Allocation pour enfants, dentaire, statut", starter: "Je suis nouveau au Canada. Je suis arrivé il y a " },
-      { id: "student", title: "Étudiant", sub: "Bourses et prêts du RAFEO", starter: "Je suis étudiant au collège ou à l'université. " },
-      { id: "family", title: "Famille", sub: "Allocation pour enfants, garde, dentaire", starter: "J'ai des enfants de " },
-      { id: "senior", title: "Aîné", sub: "SV, SRG, dentaire", starter: "J'ai 65 ans ou plus. " },
-      { id: "worker", title: "Travailleur à faible revenu", sub: "Allocation travailleurs, rabais TTC", starter: "Je travaille et je gagne environ " },
-    ],
+    profileOnly: "Passer et vérifier avec mon profil seulement",
+  },
+  examples: {
+    heading: "Trois prestations souvent oubliées",
+    help: "Les montants et les règles viennent des pages officielles ci-dessous.",
+    source: "Page officielle",
+    ids: ["ca-ccb", "ca-cdcp", "to-fair-pass"],
   },
   trust: [
     { title: "Sources officielles seulement", body: "Chaque résultat renvoie à la page fédérale, ontarienne ou torontoise d'où il vient." },
     { title: "Vérifié toutes les 6 à 24 heures", body: "Chaque programme indique sa dernière vérification par une personne et la dernière modification de la page officielle." },
-    { title: "Confidentiel par défaut", body: "Aucun compte requis. Nous ne conservons pas ce que vous nous dites." },
+    { title: "Confidentiel par défaut", body: "Aucun compte requis. Nous ne conservons jamais ce que vous écrivez ou dites. Enregistrer un profil est facultatif et chiffré." },
     { title: "Langage simple", body: "Règles et projets de loi expliqués en quelques phrases, pas en quarante pages." },
   ],
   features: {
@@ -187,13 +180,13 @@ const fr: LandingCopy = {
       { q: "Pourquoi un résultat dit-il « Peut-être admissible »?", a: "Soit il nous manque un détail, comme la taille du ménage, soit le gouvernement ne publie pas la limite exacte. Nous vous disons exactement quoi vérifier au lieu de deviner." },
       { q: "Pourquoi le crédit pour la TPS/TVH a-t-il changé de nom?", a: "Depuis juillet 2026, l'ARC l'appelle la Prestation canadienne pour l'épicerie et les produits essentiels. Nous utilisons le nouveau nom et mentionnons l'ancien." },
       { q: "Est-ce que ça couvre les nouvelles lois qui me touchent?", a: "Oui. La page Lois récentes suit les projets de loi fédéraux et ontariens, montre l'étape et la chronologie de chacun et met en évidence ceux qui sont récemment devenus des lois." },
-      { q: "Ai-je besoin d'un compte?", a: "Non. La connexion sert seulement si vous choisissez d'enregistrer vos résultats. Même alors, seules vos réponses sont conservées, et elles sont chiffrées." },
+      { q: "Ai-je besoin d'un compte?", a: "Non. Continuez en tant qu'invité et vos réponses restent dans votre onglet. Connectez-vous avec Google seulement pour enregistrer votre profil : il est chiffré, et vous pouvez supprimer votre compte en tout temps." },
     ],
   },
   cta: {
     headline: "Voyez ce que vous manquez avant la prochaine échéance",
     body: "Écrivez ou dites quelques phrases sur votre vie. Vous obtiendrez la liste des prestations fédérales, ontariennes et torontoises avec les liens officiels et les prochaines étapes.",
-    button: "Décrire ma situation",
+    button: "Commencer",
     fine: "Aucun compte · Aucun NAS · Toutes les langues · Pas un conseil juridique ou financier",
   },
 };

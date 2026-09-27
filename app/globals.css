@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Dark mode is a class on <html> set by next-themes (light / dark / system). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * Design tokens. Colour pairs are chosen for WCAG 2.2 AA contrast (≥ 4.5:1 for
  * text) in both light and dark schemes.
@@ -27,34 +30,53 @@
   --not-fg: #334155;
   --warn-bg: #fff7ed;
   --warn-fg: #7c2d12;
+  --info-bg: #eef5f3;
+  --info-fg: #0b5a54;
   --focus: #b45309;
+  /* shadcn/ui token names, mapped onto the palette above. */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --secondary: var(--surface);
+  --secondary-foreground: var(--foreground);
+  --accent: var(--surface);
+  --accent-foreground: var(--foreground);
+  --muted-foreground: var(--muted);
+  --destructive: #b91c1c;
+  /* Fill for destructive buttons with white text: AA in both themes. */
+  --destructive-strong: #b91c1c;
+  --input: var(--border-strong);
+  --ring: var(--primary);
+  --radius: 0.75rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #121412;
-    --foreground: #f2f2ee;
-    --muted: #b9b9b1;
-    --card: #1b1e1c;
-    --surface: #202421;
-    --border: #353a37;
-    --border-strong: #4a504c;
-    --primary: #5eead4;
-    --primary-hover: #99f6e4;
-    --primary-foreground: #06201d;
-    --primary-soft: #11302c;
-    --primary-soft-border: #1f4a44;
-    --primary-soft-fg: #99f6e4;
-    --likely-bg: #14532d;
-    --likely-fg: #dcfce7;
-    --possibly-bg: #713f12;
-    --possibly-fg: #fef3c7;
-    --not-bg: #334155;
-    --not-fg: #f1f5f9;
-    --warn-bg: #431407;
-    --warn-fg: #ffedd5;
-    --focus: #fbbf24;
-  }
+.dark {
+  color-scheme: dark;
+  --background: #121412;
+  --foreground: #f2f2ee;
+  --muted: #b9b9b1;
+  --card: #1b1e1c;
+  --surface: #202421;
+  --border: #353a37;
+  --border-strong: #4a504c;
+  --primary: #5eead4;
+  --primary-hover: #99f6e4;
+  --primary-foreground: #06201d;
+  --primary-soft: #11302c;
+  --primary-soft-border: #1f4a44;
+  --primary-soft-fg: #99f6e4;
+  --likely-bg: #14532d;
+  --likely-fg: #dcfce7;
+  --possibly-bg: #713f12;
+  --possibly-fg: #fef3c7;
+  --not-bg: #334155;
+  --not-fg: #f1f5f9;
+  --warn-bg: #431407;
+  --warn-fg: #ffedd5;
+  --info-bg: #11302c;
+  --info-fg: #99f6e4;
+  --focus: #fbbf24;
+  --destructive: #f87171;
 }
 
 @theme inline {
@@ -62,6 +84,18 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-strong: var(--destructive-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-border: var(--border);
   --color-surface: var(--surface);
   --color-border-strong: var(--border-strong);
@@ -79,6 +113,8 @@
   --color-not-fg: var(--not-fg);
   --color-warn-bg: var(--warn-bg);
   --color-warn-fg: var(--warn-fg);
+  --color-info-bg: var(--info-bg);
+  --color-info-fg: var(--info-fg);
   /* Set by next/font in app/layout.tsx; system fallbacks keep text readable before the fonts load. */
   --font-sans: var(--font-public-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-display: var(--font-newsreader), Georgia, "Times New Roman", serif;

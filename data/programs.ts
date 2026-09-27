@@ -34,6 +34,23 @@ const ageAtLeast = (id: string, min: number, src: string, quote?: string): Crite
   source_quote: quote,
 });
 
+/**
+ * Benefits paid through the tax system need a filed return. Not having filed is
+ * NOT "not eligible" (people can file late, even with no income), so a "no"
+ * returns null → "Possibly eligible — file a tax return". Unknown → we ask.
+ */
+const filesTaxes = (src: string): Criterion => ({
+  id: "files_tax_return",
+  met: L("You file a tax return", "Vous produisez une déclaration de revenus"),
+  failed: L("You need to file a tax return to get this", "Vous devez produire une déclaration de revenus pour la recevoir"),
+  check: L(
+    "File a tax return to get this, even if you had no income. You can also file for past years.",
+    "Produisez une déclaration de revenus pour la recevoir, même sans revenu. Vous pouvez aussi produire pour les années passées.",
+  ),
+  logic: { if: [{ "==": [{ var: "files_taxes" }, true] }, true, null] },
+  source_url: src,
+});
+
 // ---------- Federal ---------------------------------------------------------
 
 const CCB_WHO = "https://www.canada.ca/en/revenue-agency/services/child-family-benefits/canada-child-benefit/who-apply.html";
@@ -95,10 +112,11 @@ const ccb: ProgramRecord = {
         source_url: CCB_WHO,
         source_quote: "a temporary resident … who has lived in Canada throughout the previous 18 months, and has a valid permit in the 19th month",
       },
+      filesTaxes(CCB_WHO),
     ],
     also_required: [
       L("You must be the person mainly responsible for the child's care", "Vous devez être la personne principalement responsable des soins de l'enfant"),
-      L("You (and your partner) must file a tax return every year", "Vous (et votre partenaire) devez produire une déclaration de revenus chaque année"),
+      L("Your partner (if you have one) must also file a tax return", "Votre partenaire (le cas échéant) doit aussi produire une déclaration de revenus"),
       L("The child must live with you", "L'enfant doit vivre avec vous"),
     ],
   },
@@ -178,10 +196,10 @@ const cgeb: ProgramRecord = {
         logic: { if: [false, true, null] },
         source_url: CGEB_HOW_MUCH,
       },
+      filesTaxes(CGEB_WHO),
     ],
     also_required: [
       L("You must be a resident of Canada for tax purposes", "Vous devez être résident du Canada aux fins de l'impôt"),
-      L("You must file a tax return every year, even with no income", "Vous devez produire une déclaration de revenus chaque année, même sans revenu"),
     ],
   },
   benefit_amount: {
@@ -244,10 +262,11 @@ const cdcp: ProgramRecord = {
         source_url: CDCP_QUALIFY,
         source_quote: "your adjusted family net income must be less than $90,000",
       },
+      filesTaxes(CDCP_QUALIFY),
     ],
     also_required: [
       L("You must be a resident of Canada for tax purposes", "Vous devez être résident du Canada aux fins de l'impôt"),
-      L("You (and your partner) must have filed a tax return last year", "Vous (et votre partenaire) devez avoir produit une déclaration de revenus l'an dernier"),
+      L("Your partner (if you have one) must also have filed a tax return last year", "Votre partenaire (le cas échéant) doit aussi avoir produit une déclaration de revenus l'an dernier"),
     ],
   },
   benefit_amount: {
@@ -343,6 +362,7 @@ const cwb: ProgramRecord = {
         source_quote:
           "no basic amount is paid if adjusted net income is more than $37,742 [single] … no basic amount is paid if adjusted family net income is more than $49,393 [families]",
       },
+      filesTaxes(CWB_WHO),
     ],
     also_required: [
       L("You must live in Canada for the whole year", "Vous devez vivre au Canada toute l'année"),
@@ -529,9 +549,9 @@ const otb: ProgramRecord = {
         logic: { if: [false, true, null] },
         source_url: OTB,
       },
+      filesTaxes(OTB),
     ],
     also_required: [
-      L("File your tax return every year", "Produisez votre déclaration de revenus chaque année"),
       L("For the energy and property tax part, fill out form ON-BEN with your return", "Pour la partie énergie et impôts fonciers, remplissez le formulaire ON-BEN"),
     ],
   },

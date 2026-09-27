@@ -3,24 +3,48 @@ import { cookies, headers } from "next/headers";
 import { timingSafeEqual } from "node:crypto";
 
 /**
- * Auth is OPTIONAL and only used for: saving results (opt-in) and admin
- * reviewer accounts. Browsing and matching never require an account.
+ * Auth is OPTIONAL. It is only used to save a profile across visits and for
+ * admin reviewer accounts. Nothing forces a login: no session = guest, and a
+ * guest's profile lives only in their browser tab.
  *
- * Production: Auth0 Universal Login with the passwordless email connection
- * (AUTH0_CONNECTION=email). Reviewers are listed in ADMIN_EMAILS.
+ * Sign-in goes straight to Google through Auth0 (GOOGLE_LOGIN_URL skips the
+ * Auth0 login screen). Reviewers are the verified emails in ADMIN_EMAILS.
  * Local development without Auth0: set ADMIN_TOKEN and send it as the
- * `x-admin-token` header or `bb_admin` cookie. Never set ADMIN_TOKEN in production.
+ * `x-admin-token` header or `bb_admin` cookie. It is ignored in production.
  */
-export const auth0Enabled = Boolean(process.env.AUTH0_DOMAIN && process.env.AUTH0_CLIENT_ID);
+export const auth0Enabled = Boolean(
+  process.env.AUTH0_DOMAIN && process.env.AUTH0_CLIENT_ID && process.env.AUTH0_CLIENT_SECRET && process.env.AUTH0_SECRET,
+);
 
 export const auth0 = auth0Enabled
-  ? new Auth0Client({
-      authorizationParameters: {
-        scope: "openid profile email",
-        ...(process.env.AUTH0_CONNECTION ? { connection: process.env.AUTH0_CONNECTION } : {}),
-      },
-    })
+  ? new Auth0Client({ authorizationParameters: { scope: "openid profile email" } })
   : null;
+
+/** Auth0's name for its Google social connection. */
+export const GOOGLE_CONNECTION = process.env.AUTH0_GOOGLE_CONNECTION ?? "google-oauth2";
+
+/** The SDK forwards login query params to Auth0, so `connection` goes straight to Google. */
+export function googleLoginUrl(returnTo = "/onboarding"): string {
+  return `/auth/login?${new URLSearchParams({ connection: GOOGLE_CONNECTION, returnTo })}`;
+}
+
+export interface SignedInUser {
+  sub: string;
+  email: string | null;
+  name: string | null;
+}
+
+/** The signed-in user, or null for a guest (including when Auth0 isn't configured). */
+export async function getUserSession(): Promise<SignedInUser | null> {
+  if (!auth0) return null;
+  const session = await auth0.getSession();
+  if (!session) return null;
+  return {
+    sub: session.user.sub,
+    email: (session.user.email as string | undefined)?.toLowerCase() ?? null,
+    name: (session.user.name as string | undefined) ?? null,
+  };
+}
 
 export interface Actor {
   id: string; // stable subject

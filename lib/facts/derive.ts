@@ -33,6 +33,7 @@ export interface DerivedData {
   has_dental_insurance: boolean | null;
   housing: string | null;
   receives_social_assistance: boolean | null;
+  files_taxes: boolean | null;
 }
 
 export const RANGE_VARS = ["family_income"] as const;
@@ -81,6 +82,7 @@ export function deriveData(f: Facts): DerivedData {
     has_dental_insurance: f.has_dental_insurance,
     housing: f.housing,
     receives_social_assistance: f.receives_social_assistance,
+    files_taxes: f.files_taxes,
   };
 }
 
@@ -109,4 +111,5 @@ export const DERIVED_FROM: Record<keyof DerivedData, (keyof Facts)[]> = {
   has_dental_insurance: ["has_dental_insurance"],
   housing: ["housing"],
   receives_social_assistance: ["receives_social_assistance"],
+  files_taxes: ["files_taxes"],
 };

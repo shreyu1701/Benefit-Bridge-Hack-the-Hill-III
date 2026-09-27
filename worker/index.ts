@@ -2,6 +2,7 @@
  * Ingestion worker — a separate long-running process (`npm run worker`).
  *
  *   Tier 1 (real-time, automatic):  LEGISinfo every 30 min, ola.org every 60 min, Gazette RSS hourly
+ *                                   + hourly drafts of who each bill affects (→ reviewer queue)
  *   Tier 2 (human-approved):        program pages checked every 6–24 h (per page), changes → review queue
  *   Tier 3 (reference):             laws + open datasets weekly, or right after a royal assent
  *
@@ -11,7 +12,7 @@
  */
 import { TIER1, TIER3 } from "@/data/sources";
 import { closePool, getPool, query } from "@/lib/db/pool";
-import { billSummariesJob, gazetteJob, legisinfoJob, ontarioBillsJob, pageWatchJob, referenceLawsJob } from "./jobs";
+import { billImpactsJob, billSummariesJob, gazetteJob, programDraftsJob, legisinfoJob, ontarioBillsJob, pageWatchJob, referenceLawsJob } from "./jobs";
 
 interface Job {
   name: string;
@@ -24,6 +25,10 @@ const JOBS: Job[] = [
   { name: "ontario-bills", everyMinutes: TIER1.ontarioBills.intervalMinutes, run: ontarioBillsJob },
   { name: "gazette", everyMinutes: TIER1.gazette.intervalMinutes, run: gazetteJob },
   { name: "bill-summaries", everyMinutes: 30, run: () => billSummariesJob() },
+  // Drafts "who does this bill affect" for reviewers; shown in results only after approval.
+  { name: "bill-impacts", everyMinutes: 60, run: () => billImpactsJob() },
+  // New programs a reviewer asked for, drafted from the official page (hidden until approved).
+  { name: "program-drafts", everyMinutes: 15, run: () => programDraftsJob() },
   // Page watch itself decides which pages are due (per-page interval); tick every 15 min.
   { name: "page-watch", everyMinutes: 15, run: pageWatchJob },
   { name: "reference-laws", everyMinutes: TIER3.intervalHours * 60, run: () => referenceLawsJob() },

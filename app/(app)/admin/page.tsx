@@ -1,3 +1,5 @@
+import { BillImpactQueue } from "@/components/bill-impact-queue";
+import { ProgramDraftForm } from "@/components/program-draft-form";
 import { ReviewQueue } from "@/components/review-queue";
 import { Notice } from "@/components/ui/notice";
 import { auth0Enabled, currentActor } from "@/lib/auth0";
@@ -35,7 +37,21 @@ export default async function AdminPage() {
         Changes detected on official program pages. The live eligibility rules stay unchanged until you approve. Signed in as{" "}
         {actor.email ?? actor.id}.{auth0Enabled && <> <a href="/auth/logout" className="underline">Sign out</a></>}
       </p>
-      <ReviewQueue />
+      <section aria-labelledby="program-reviews" className="space-y-3">
+        <h2 id="program-reviews" className="text-xl font-semibold">Program pages</h2>
+        <ReviewQueue />
+      </section>
+      <section aria-labelledby="new-program" className="space-y-3">
+        <h2 id="new-program" className="text-xl font-semibold">Add a program</h2>
+        <ProgramDraftForm />
+      </section>
+      <section aria-labelledby="bill-impacts" className="space-y-3">
+        <h2 id="bill-impacts" className="text-xl font-semibold">Bills: who they affect</h2>
+        <p className="text-muted">
+          Drafted from each bill&apos;s official text. A bill appears in people&apos;s results only after you approve it here.
+        </p>
+        <BillImpactQueue />
+      </section>
     </div>
   );
 }

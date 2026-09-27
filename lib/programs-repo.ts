@@ -57,7 +57,7 @@ export async function loadPrograms(): Promise<ProgramView[]> {
                 'what_changed', l.what_changed, 'approved', l.what_changed_approved,
                 'relationship', pl.relationship, 'current_to', l.current_to))
               FROM program_law_links pl JOIN laws l ON l.id = pl.law_id WHERE pl.program_id = p.id), '[]') AS laws
-       FROM programs p WHERE p.status <> 'retired' ORDER BY p.level, p.id`,
+       FROM programs p WHERE p.status NOT IN ('retired', 'draft') ORDER BY p.level, p.id`,
   );
   return rows.map((r) => ({
     ...(r as unknown as ProgramView),

@@ -117,6 +117,8 @@ export const ProfileSchema = z.object({
   years_in_canada: z.number().min(0).max(120).nullable(),
   employment_status: z.enum(EMPLOYMENT_STATUSES).nullable(),
   disability: z.boolean().nullable(),
+  /** The CRA approved the person for the disability tax credit (needed for the Canada Disability Benefit). */
+  disability_tax_credit: z.boolean().nullable(),
   student_status: z.enum(STUDENT_STATUSES).nullable(),
   has_dental_insurance: z.boolean().nullable(),
   housing: z.enum(HOUSING).nullable(),

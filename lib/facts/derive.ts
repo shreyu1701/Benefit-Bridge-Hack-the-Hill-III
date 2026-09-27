@@ -27,6 +27,7 @@ export interface DerivedData {
   employment_status: string | null;
   has_working_income: boolean | null;
   disability: boolean | null;
+  disability_tax_credit: boolean | null;
   student_status: string | null;
   is_post_secondary_student: boolean | null;
   is_full_time_student: boolean | null;
@@ -75,6 +76,7 @@ export function deriveData(f: Facts): DerivedData {
     employment_status: f.employment_status,
     has_working_income: employed,
     disability: f.disability,
+    disability_tax_credit: f.disability_tax_credit,
     student_status: f.student_status,
     is_post_secondary_student:
       f.student_status === null ? null : f.student_status.startsWith("post_secondary"),
@@ -105,6 +107,7 @@ export const DERIVED_FROM: Record<keyof DerivedData, (keyof Facts)[]> = {
   employment_status: ["employment_status"],
   has_working_income: ["employment_status"],
   disability: ["disability"],
+  disability_tax_credit: ["disability_tax_credit"],
   student_status: ["student_status"],
   is_post_secondary_student: ["student_status"],
   is_full_time_student: ["student_status"],

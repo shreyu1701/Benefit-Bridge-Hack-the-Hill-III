@@ -67,7 +67,7 @@ export function ProgramCard({ card, speechLang }: { card: Card_; speechLang: str
         {card.pending_review && <Notice tone="info">{t("results.pending")}</Notice>}
 
         <p>{card.summary}</p>
-        <ListenButton text={`${card.name}. ${card.summary} ${card.amount?.text ?? ""}`} lang={speechLang} />
+        <ListenButton text={`${card.name}. ${card.summary} ${card.estimate?.text ?? card.amount?.text ?? ""}`} lang={speechLang} />
 
         <CitedList title={t("results.why")} items={card.reasons_met} />
         <CitedList title={card.confidence === "not_eligible" ? t("results.because") : t("results.check")} items={card.confidence === "not_eligible" ? card.failed : card.uncertain} />
@@ -79,6 +79,15 @@ export function ProgramCard({ card, speechLang }: { card: Card_; speechLang: str
           </div>
         )}
 
+        {card.estimate && (
+          <div className="rounded-lg bg-primary-soft p-3">
+            <h4 className="font-semibold">{t("results.estimate")}</h4>
+            <p>
+              {card.estimate.text}{" "}
+              <a href={card.estimate.source_url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary underline">[{t("results.source")}]</a>
+            </p>
+          </div>
+        )}
         {card.amount && (
           <div>
             <h4 className="font-semibold">{t("results.amount")}</h4>

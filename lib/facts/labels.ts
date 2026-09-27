@@ -34,6 +34,14 @@ export const FACT_META: Record<keyof Facts, { label: L; question: L; help?: L }>
   years_in_canada: { label: { en: "Years in Canada", fr: "Années au Canada" }, question: { en: "How many years have you lived in Canada?", fr: "Depuis combien d'années vivez-vous au Canada?" } },
   employment_status: { label: { en: "Work", fr: "Travail" }, question: { en: "Do you work right now?", fr: "Travaillez-vous en ce moment?" } },
   disability: { label: { en: "Disability", fr: "Invalidité" }, question: { en: "Do you have a disability?", fr: "Avez-vous une invalidité?" } },
+  disability_tax_credit: {
+    label: { en: "Disability tax credit", fr: "Crédit d'impôt pour personnes handicapées" },
+    question: { en: "Has the CRA approved you for the disability tax credit (DTC)?", fr: "L'ARC vous a-t-elle accordé le crédit d'impôt pour personnes handicapées (CIPH)?" },
+    help: {
+      en: "The DTC is approved by the Canada Revenue Agency using a form your doctor fills out (T2201). It's needed for the Canada Disability Benefit.",
+      fr: "Le CIPH est accordé par l'Agence du revenu du Canada à partir d'un formulaire rempli par votre médecin (T2201). Il est requis pour la Prestation canadienne pour les personnes handicapées.",
+    },
+  },
   student_status: { label: { en: "Student", fr: "Études" }, question: { en: "Are you a student?", fr: "Êtes-vous aux études?" } },
   has_dental_insurance: {
     label: { en: "Dental insurance", fr: "Assurance dentaire" },
@@ -143,6 +151,7 @@ export function formatFact(key: keyof Facts, value: Facts[keyof Facts], lang: Ui
     }
     case "has_partner":
     case "disability":
+    case "disability_tax_credit":
     case "has_dental_insurance":
     case "receives_social_assistance":
     case "files_taxes":

@@ -76,6 +76,16 @@ exports[`sensitive-data scrubbing > what Gemini is asked for is reviewed on ever
             },
           ],
         },
+        "disability_tax_credit": {
+          "anyOf": [
+            {
+              "type": "boolean",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
         "employment_status": {
           "anyOf": [
             {
@@ -312,6 +322,7 @@ exports[`sensitive-data scrubbing > what Gemini is asked for is reviewed on ever
         "children_ages",
         "city",
         "disability",
+        "disability_tax_credit",
         "employment_status",
         "family_income_band",
         "files_taxes",

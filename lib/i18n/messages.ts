@@ -80,6 +80,7 @@ const en = {
   "results.because": "Why not",
   "results.also": "Also required",
   "results.amount": "How much",
+  "results.estimate": "Your estimate",
   "results.deadlines": "Deadlines",
   "results.apply": "How to apply",
   "results.official": "Official page",
@@ -110,6 +111,11 @@ const en = {
   "results.matches": "Related to",
   "results.uncovered": "Our list doesn't have a program for this yet:",
   "results.uncoveredLink": "See all Government of Canada benefits",
+  "results.lawsTitle": "Changes to the law that may affect you",
+  "results.lawsHelp": "Checked by our reviewers against the official bill. A proposed bill can still change or not pass.",
+  "results.affects": "Affects you",
+  "results.mayAffect": "May affect you",
+  "results.lawDetails": "What this bill does",
 
   "personas.title": "How this affects people like you",
   "personas.label":
@@ -243,6 +249,7 @@ const fr: Record<MessageKey, string> = {
   "results.because": "Pourquoi pas",
   "results.also": "Également requis",
   "results.amount": "Montant",
+  "results.estimate": "Votre estimation",
   "results.deadlines": "Échéances",
   "results.apply": "Comment faire une demande",
   "results.official": "Page officielle",
@@ -275,6 +282,11 @@ const fr: Record<MessageKey, string> = {
   "results.matches": "Lié à",
   "results.uncovered": "Notre liste n'a pas encore de programme pour :",
   "results.uncoveredLink": "Voir toutes les prestations du gouvernement du Canada",
+  "results.lawsTitle": "Changements aux lois qui pourraient vous toucher",
+  "results.lawsHelp": "Vérifié par nos réviseurs à partir du projet de loi officiel. Un projet de loi peut encore changer ou ne pas être adopté.",
+  "results.affects": "Vous touche",
+  "results.mayAffect": "Pourrait vous toucher",
+  "results.lawDetails": "Ce que fait ce projet de loi",
 
   "personas.title": "Ce que cela signifie pour des gens comme vous",
   "personas.label":

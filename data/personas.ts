@@ -30,6 +30,7 @@ const base: Facts = {
   housing: null,
   receives_social_assistance: false,
   files_taxes: true,
+  disability_tax_credit: null,
   life_events: null,
   needs: null,
 };

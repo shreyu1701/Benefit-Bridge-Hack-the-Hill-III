@@ -1,8 +1,17 @@
+import { z } from "zod";
 import { emptyFacts, FACT_KEYS, FactsSchema, LIFE_EVENTS, LIST_KEYS, NEEDS, type Facts } from "@/lib/facts/schema";
 
 const isListKey = (k: string): k is (typeof LIST_KEYS)[number] => (LIST_KEYS as readonly string[]).includes(k);
 import type { LlmClient } from "./client";
+import { conditionsToLogic, sanitizeConditions, type Condition } from "@/lib/rules/conditions";
+import type { Logic } from "@/lib/rules/types";
 import {
+  BILL_IMPACT_JSON_SCHEMA,
+  BILL_IMPACT_SYSTEM,
+  BillImpactOutput,
+  PROGRAM_DRAFT_JSON_SCHEMA,
+  PROGRAM_DRAFT_SYSTEM,
+  ProgramDraftOutput,
   CHANGE_REVIEW_JSON_SCHEMA,
   CHANGE_REVIEW_SYSTEM,
   ChangeReviewOutput,
@@ -136,5 +145,64 @@ export async function draftChangeReview(
     user: `PAGE: ${args.url}\nCURRENT PROGRAM RECORD:\n${JSON.stringify(args.programJson).slice(0, 20_000)}\n\nDIFF:\n${args.diff.slice(0, 30_000)}`,
     jsonSchema: CHANGE_REVIEW_JSON_SCHEMA,
     validator: ChangeReviewOutput,
+  });
+}
+
+export interface BillImpactDraft {
+  relevant: boolean;
+  needs: BillImpactOutput["needs"];
+  life_events: BillImpactOutput["life_events"];
+  conditions: Condition[];
+  /** JSON Logic built from `conditions` by code (never written by the model). */
+  applies_if: Logic | null;
+  who: { en: string; fr: string };
+  evidence_quotes: string[];
+  /** Conditions the model proposed that were not usable, with the reason. */
+  dropped: string[];
+}
+
+/** Draft who a bill affects, from its official text. A reviewer approves or edits it before anyone sees it. */
+export async function draftBillImpact(
+  llm: LlmClient,
+  args: { title: string; stage: string; hasRoyalAssent: boolean; sourceText: string; sourceUrl: string },
+): Promise<BillImpactDraft> {
+  const out = await llm.generateJson({
+    task: "bill_impact",
+    system: BILL_IMPACT_SYSTEM,
+    user: [
+      `BILL: ${args.title}`,
+      `STAGE: ${args.stage}`,
+      `ROYAL ASSENT RECEIVED: ${args.hasRoyalAssent ? "yes" : "no — this is a proposal, not law"}`,
+      `SOURCE URL: ${args.sourceUrl}`,
+      `SOURCE TEXT:\n"""\n${args.sourceText.slice(0, 30_000)}\n"""`,
+    ].join("\n"),
+    jsonSchema: BILL_IMPACT_JSON_SCHEMA,
+    // Conditions are re-checked one by one below, so accept any shape here.
+    validator: BillImpactOutput.extend({ conditions: z.array(z.unknown()) }),
+  });
+  const { conditions, dropped } = sanitizeConditions(out.conditions);
+  return {
+    relevant: out.relevant_to_individuals,
+    needs: [...new Set(out.needs)],
+    life_events: [...new Set(out.life_events)],
+    conditions,
+    applies_if: conditionsToLogic(conditions),
+    who: { en: out.who_en.trim().slice(0, 400), fr: out.who_fr.trim().slice(0, 400) },
+    evidence_quotes: out.evidence_quotes.map((q) => q.slice(0, 300)).slice(0, 8),
+    dropped,
+  };
+}
+
+/** Draft a program record from one official page. Criteria are re-checked by buildProgramFromDraft. */
+export async function draftProgram(llm: LlmClient, args: { pageText: string; url: string; jurisdiction: string }): Promise<ProgramDraftOutput> {
+  return llm.generateJson({
+    task: "program_draft",
+    system: PROGRAM_DRAFT_SYSTEM,
+    user: [`JURISDICTION: ${args.jurisdiction}`, `PAGE URL: ${args.url}`, `PAGE TEXT:`, '"""', args.pageText.slice(0, 30_000), '"""'].join("\n"),
+    jsonSchema: PROGRAM_DRAFT_JSON_SCHEMA,
+    // Conditions are checked one by one when the record is built, so accept any shape here.
+    validator: ProgramDraftOutput.extend({
+      criteria: z.array(ProgramDraftOutput.shape.criteria.element.extend({ condition: z.unknown() })),
+    }) as unknown as z.ZodType<ProgramDraftOutput>,
   });
 }

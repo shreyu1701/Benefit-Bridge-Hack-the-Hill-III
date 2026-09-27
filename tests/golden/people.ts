@@ -22,7 +22,8 @@ export interface GoldenPerson {
 
 type ProgramId =
   | "ca-ccb" | "ca-cgeb" | "ca-cdcp" | "ca-cwb" | "ca-oas" | "ca-gis"
-  | "on-otb" | "on-child-care-fee-reduction" | "on-osap" | "on-ow" | "to-fair-pass";
+  | "on-otb" | "on-child-care-fee-reduction" | "on-osap" | "on-ow" | "to-fair-pass"
+  | "ca-cdb" | "on-seniors-dental";
 
 const f = (x: Partial<Facts>): Facts => ({ ...emptyFacts(), ...x });
 
@@ -39,6 +40,7 @@ const torontoParentExpect: GoldenPerson["expect"] = {
   "on-otb": "P", "on-child-care-fee-reduction": "L", "on-osap": "N", "on-ow": "P",
   // Fair Pass: only household sizes 1 and 4 have verified limits; this household is 3.
   "to-fair-pass": "P",
+  "ca-cdb": "N", "on-seniors-dental": "N",
 };
 
 const senior = f({
@@ -57,6 +59,7 @@ const bcFamily = f({
 const bcFamilyExpect: GoldenPerson["expect"] = {
   "ca-ccb": "L", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
   "on-otb": "N", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "N", "to-fair-pass": "N",
+  "ca-cdb": "N", "on-seniors-dental": "N",
 };
 
 const ottawaTempWorker = f({
@@ -65,6 +68,20 @@ const ottawaTempWorker = f({
   employment_status: "employed", disability: false, student_status: "none", has_dental_insurance: false,
   housing: "rent", receives_social_assistance: false, files_taxes: true,
 });
+
+const disabledAdult = f({
+  province: "ON", city: "Toronto", age: 40, has_partner: false, children_ages: [],
+  family_income_band: "25k_35k", residency_status: "citizen", years_in_canada: 40,
+  employment_status: "not_working", disability: true, disability_tax_credit: true, student_status: "none",
+  has_dental_insurance: false, housing: "rent", receives_social_assistance: false, files_taxes: true,
+});
+const disabledAdultExpect: GoldenPerson["expect"] = {
+  "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
+  // Fair Pass: household of 1, and $25–35k is above the $20,514 single limit.
+  "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+  // CDB: $25–35k is entirely under $35,242, where some benefit is left even with no work income.
+  "ca-cdb": "L", "on-seniors-dental": "N",
+};
 
 export const GOLDEN_PEOPLE: GoldenPerson[] = [
   {
@@ -85,7 +102,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
   {
     name: "Same parent with a disability: the CWB disability supplement limits are a data gap",
     facts: { ...torontoParent, disability: true },
-    expect: { ...torontoParentExpect, "ca-cwb": "P" },
+    expect: { ...torontoParentExpect, "ca-cwb": "P", "ca-cdb": "P" }, // disability tax credit not known yet
   },
   {
     name: "Toronto couple, 4 people, $25–35k, has dental insurance: Fair Pass size-4 limit applies",
@@ -98,6 +115,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "L", "ca-gis": "P",
       "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+      "ca-cdb": "N", "on-seniors-dental": "L",
     },
   },
   {
@@ -106,6 +124,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
       "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+      "ca-cdb": "N", "on-seniors-dental": "L",
     },
   },
   {
@@ -114,6 +133,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "N", "ca-cwb": "L", "ca-oas": "N", "ca-gis": "N",
       "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "P", "to-fair-pass": "L",
+      "ca-cdb": "N", "on-seniors-dental": "N",
     },
   },
   {
@@ -122,6 +142,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "N", "ca-cwb": "L", "ca-oas": "L", "ca-gis": "P",
       "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+      "ca-cdb": "N", "on-seniors-dental": "N",
     },
   },
   {
@@ -130,6 +151,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
       "on-otb": "P", "on-child-care-fee-reduction": "L", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+      "ca-cdb": "N", "on-seniors-dental": "N",
     },
   },
   {
@@ -138,6 +160,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "L", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
       "on-otb": "P", "on-child-care-fee-reduction": "L", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+      "ca-cdb": "N", "on-seniors-dental": "N",
     },
   },
   {
@@ -146,6 +169,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: {
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
       "on-otb": "P", "on-child-care-fee-reduction": "L", "on-osap": "N", "on-ow": "P", "to-fair-pass": "P",
+      "ca-cdb": "N", "on-seniors-dental": "N",
     },
   },
   {
@@ -155,6 +179,7 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
       "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "N", "ca-cwb": "N", "ca-oas": "N", "ca-gis": "N",
       // Fair Pass: $15–25k straddles the $20,514 size-1 limit, so we can't tell.
       "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "L", "on-ow": "P", "to-fair-pass": "P",
+      "ca-cdb": "N", "on-seniors-dental": "N",
     },
   },
   {
@@ -168,11 +193,36 @@ export const GOLDEN_PEOPLE: GoldenPerson[] = [
     expect: { ...bcFamilyExpect, "ca-cdcp": "N" },
   },
   {
+    name: "Toronto, 40, disability with the DTC, not working, $25–35k: Canada Disability Benefit likely",
+    facts: disabledAdult,
+    expect: disabledAdultExpect,
+  },
+  {
+    name: "Same person at $35–50k: whether any CDB is left depends on work income we don't ask about",
+    facts: { ...disabledAdult, family_income_band: "35k_50k" },
+    expect: { ...disabledAdultExpect, "ca-cdb": "P" },
+  },
+  {
+    name: "Same person without the disability tax credit: the CDB needs it first",
+    facts: { ...disabledAdult, disability_tax_credit: false },
+    expect: { ...disabledAdultExpect, "ca-cdb": "N" },
+  },
+  {
+    name: "Toronto senior couple, 72, $35–50k: the band straddles the $42,290 couple limit for seniors' dental",
+    facts: { ...senior, age: 72, years_in_canada: 72, has_partner: true, family_income_band: "35k_50k" },
+    expect: {
+      "ca-ccb": "N", "ca-cgeb": "P", "ca-cdcp": "L", "ca-cwb": "N", "ca-oas": "L", "ca-gis": "P",
+      "on-otb": "P", "on-child-care-fee-reduction": "N", "on-osap": "N", "on-ow": "P", "to-fair-pass": "N",
+      "ca-cdb": "N", "on-seniors-dental": "P",
+    },
+  },
+  {
     name: "Only the city is known: everything is possibly, nothing is ruled out",
     facts: f({ province: "ON", city: "Toronto" }),
     expect: {
       "ca-ccb": "P", "ca-cgeb": "P", "ca-cdcp": "P", "ca-cwb": "P", "ca-oas": "P", "ca-gis": "P",
       "on-otb": "P", "on-child-care-fee-reduction": "P", "on-osap": "P", "on-ow": "P", "to-fair-pass": "P",
+      "ca-cdb": "P", "on-seniors-dental": "P",
     },
   },
 ];

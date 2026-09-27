@@ -9,7 +9,7 @@ import { LIST_KEYS, type Facts } from "@/lib/facts/schema";
 import { cn } from "@/lib/utils";
 
 type Key = keyof Facts;
-const BOOL_KEYS: Key[] = ["has_partner", "disability", "has_dental_insurance", "receives_social_assistance", "files_taxes"];
+const BOOL_KEYS: Key[] = ["has_partner", "disability", "disability_tax_credit", "has_dental_insurance", "receives_social_assistance", "files_taxes"];
 const NUM_KEYS: Key[] = ["age", "household_size", "years_in_canada"];
 /** Short enums read better as radio cards than a dropdown. */
 const RADIO_ENUMS: Key[] = ["employment_status", "student_status", "housing"];

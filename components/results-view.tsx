@@ -12,6 +12,8 @@ import { useLang, useT } from "@/components/lang-provider";
 import { ENUM_LABELS } from "@/lib/facts/labels";
 import type { Facts } from "@/lib/facts/schema";
 import type { MatchResponse } from "@/lib/present";
+import { Badge } from "@/components/ui/badge";
+import { formatDate } from "@/lib/utils";
 import { loadFlow, saveFlow, type FlowState } from "@/lib/session-state";
 
 const LEVELS = ["federal", "provincial", "municipal"] as const;
@@ -248,6 +250,43 @@ export function ResultsView() {
             notEligible.map((c) => (
               <ProgramCard key={c.id} card={c} speechLang={data.lang} />
             ))}
+        </section>
+      )}
+
+      {(data.laws ?? []).length > 0 && (
+        <section aria-labelledby="laws-h" className="space-y-3">
+          <h2 id="laws-h" className="text-xl font-semibold">{t("results.lawsTitle")}</h2>
+          <p className="text-sm text-muted">{t("results.lawsHelp")}</p>
+          {data.laws.map((l) => (
+            <Card key={l.bill_id}>
+              <article aria-labelledby={`law-${l.bill_id}`} className="space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={l.match === "affects" ? "likely" : "possibly"}>{t(l.match === "affects" ? "results.affects" : "results.mayAffect")}</Badge>
+                  {l.law_since ? (
+                    <Badge variant="outline">{t("laws.assent")}: {formatDate(l.law_since, uiLang)}</Badge>
+                  ) : (
+                    <Badge variant="outline">{t("laws.proposed")}</Badge>
+                  )}
+                </div>
+                <h3 id={`law-${l.bill_id}`} className="font-bold">
+                  {l.jurisdiction === "CA" ? "" : `${l.jurisdiction} `}{l.bill_number}: {l.title}
+                </h3>
+                <p>{l.who}</p>
+                {!l.law_since && l.stage && (
+                  <p className="text-sm"><span className="font-semibold">{t("laws.stage")}:</span> {l.stage}</p>
+                )}
+                {l.relevance.needs.length + l.relevance.life_events.length > 0 && (
+                  <p className="text-sm">
+                    <span className="font-semibold">{t("results.matches")}:</span>{" "}
+                    {[...l.relevance.life_events, ...l.relevance.needs].map(label).join(", ")}
+                  </p>
+                )}
+                <p className="text-sm">
+                  <Link href={`/laws/${l.bill_id}`} className="text-primary underline">{t("results.lawDetails")}</Link>
+                </p>
+              </article>
+            </Card>
+          ))}
         </section>
       )}
 

@@ -850,4 +850,208 @@ const fairPass: ProgramRecord = {
   },
 };
 
-export const SEED_PROGRAMS: ProgramRecord[] = [ccb, cgeb, cdcp, cwb, oas, gis, otb, onChildCare, osap, ow, fairPass];
+// ---------- Added 2026-09 (checked against the live pages on 2026-09-27) ----------
+
+const CDB_ELIG = "https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/eligibility.html";
+const CDB_AMOUNT = "https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/amount.html";
+const CDB_HOME = "https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit.html";
+
+/**
+ * Income: the benefit ($2,448.40 a year max) is reduced by 20% of income over
+ * $23,000 (single) or $32,500 (couple), after up to $10,210 / $14,294 of
+ * working income is exempted. We don't ask about working income, so we only
+ * decide where the published figures decide it for anyone:
+ *   - below the point where the benefit reaches $0 with NO exemption → some benefit (true)
+ *   - above that point plus the largest exemption (and, for couples, the gentler
+ *     10% rate that applies when both are eligible) → $0 for anyone (false)
+ *   - in between → it depends on working income (null: check the official page)
+ * Single: 23,000 + 2,448.40 / 20% = 35,242; + 10,210 = 45,452.
+ * Couple: 32,500 + 2,448.40 / 20% = 44,742; 32,500 + 2,448.40 / 10% + 14,294 = 71,278.
+ */
+const cdbIncome: Criterion = {
+  id: "income_below_cutoff",
+  met: L("Your income is low enough to get some of this benefit", "Votre revenu est assez bas pour recevoir une partie de cette prestation"),
+  failed: L("Your family income is too high to get any of this benefit", "Votre revenu familial est trop élevé pour recevoir cette prestation"),
+  check: L(
+    "Whether you get some of it depends on how much of your income is from work. Check the amount page.",
+    "Cela dépend de la part de votre revenu qui provient du travail. Consultez la page sur le montant.",
+  ),
+  logic: {
+    if: [
+      { "==": [{ var: "has_partner" }, true] },
+      { if: [{ "<=": [{ var: "family_income" }, 44742] }, true, { ">": [{ var: "family_income" }, 71278] }, false, null] },
+      { if: [{ "<=": [{ var: "family_income" }, 35242] }, true, { ">": [{ var: "family_income" }, 45452] }, false, null] },
+    ],
+  },
+  source_url: CDB_AMOUNT,
+  source_quote: "Single individuals: $23,000 … up to $10,210 of working income will be exempt … 20% … Couples: $32,500 … up to $14,294 … 10% (both eligible)",
+};
+
+const cdb: ProgramRecord = {
+  id: "ca-cdb",
+  name: L("Canada Disability Benefit (CDB)", "Prestation canadienne pour les personnes handicapées (PCPH)"),
+  level: "federal",
+  jurisdiction: "CA",
+  source_url: CDB_ELIG,
+  application_url: CDB_HOME,
+  eligibility_rules: {
+    version: 1,
+    criteria: [
+      {
+        id: "has_disability",
+        met: L("You have a disability", "Vous avez une invalidité"),
+        failed: L("This benefit is for people with a disability", "Cette prestation s'adresse aux personnes handicapées"),
+        check: L("Tell us if you have a disability", "Dites-nous si vous avez une invalidité"),
+        logic: { "==": [{ var: "disability" }, true] },
+        source_url: CDB_HOME,
+        source_quote: "people with disabilities who are between 18 and 64 years old",
+      },
+      {
+        id: "age_18_to_64",
+        met: L("You are between 18 and 64", "Vous avez entre 18 et 64 ans"),
+        failed: L("You must be between 18 and 64 years old", "Vous devez avoir entre 18 et 64 ans"),
+        check: L("Tell us your age", "Indiquez votre âge"),
+        logic: { and: [{ ">=": [{ var: "age" }, 18] }, { "<=": [{ var: "age" }, 64] }] },
+        source_url: CDB_ELIG,
+        source_quote: "you must be between the ages of 18 and 64 years old",
+      },
+      {
+        id: "disability_tax_credit",
+        met: L("You are approved for the disability tax credit", "Vous avez droit au crédit d'impôt pour personnes handicapées"),
+        failed: L(
+          "You must first be approved for the disability tax credit (DTC). You can apply for it with form T2201.",
+          "Vous devez d'abord obtenir le crédit d'impôt pour personnes handicapées (CIPH). Vous pouvez le demander avec le formulaire T2201.",
+        ),
+        check: L("Tell us if the CRA approved you for the disability tax credit", "Dites-nous si l'ARC vous a accordé le CIPH"),
+        logic: { "==": [{ var: "disability_tax_credit" }, true] },
+        source_url: CDB_ELIG,
+        source_quote: "you must have been approved for the disability tax credit (DTC)",
+      },
+      {
+        id: "residency_status",
+        met: L("Your status in Canada qualifies", "Votre statut au Canada est admissible"),
+        failed: L(
+          "You must be a citizen, permanent resident, protected person, or a temporary resident who has lived in Canada for 18 months",
+          "Vous devez être citoyen, résident permanent, personne protégée ou résident temporaire au Canada depuis 18 mois",
+        ),
+        check: L("Check the status rules on the official page", "Vérifiez les règles de statut sur la page officielle"),
+        // "visitor" and "other" (e.g. registered under the Indian Act) → null: check the page.
+        logic: {
+          if: [
+            { in: [{ var: "residency_status" }, CITIZEN_PR_PROTECTED] }, true,
+            { in: [{ var: "residency_status" }, TEMP_PERMIT] }, true,
+            { "==": [{ var: "residency_status" }, "refugee_claimant"] }, false,
+            null,
+          ],
+        },
+        source_url: CDB_ELIG,
+        source_quote: "a Canadian citizen … a permanent resident … a protected person … a temporary resident who has lived in Canada throughout the previous 18 months",
+      },
+      {
+        id: "temporary_resident_18_months",
+        met: L("You have lived in Canada at least 18 months", "Vous vivez au Canada depuis au moins 18 mois"),
+        failed: L("Temporary residents must have lived in Canada for the previous 18 months", "Les résidents temporaires doivent vivre au Canada depuis les 18 derniers mois"),
+        check: L("Tell us how long you have lived in Canada", "Indiquez depuis combien de temps vous vivez au Canada"),
+        applies_if: { in: [{ var: "residency_status" }, TEMP_PERMIT] },
+        logic: { ">=": [{ var: "years_in_canada" }, 1.5] },
+        source_url: CDB_ELIG,
+        source_quote: "a temporary resident who has lived in Canada throughout the previous 18 months",
+      },
+      cdbIncome,
+      filesTaxes(CDB_ELIG),
+    ],
+    also_required: [
+      L("Your spouse or common-law partner (if you have one) must also have filed their 2025 tax return", "Votre époux ou conjoint de fait (le cas échéant) doit aussi avoir produit sa déclaration de revenus de 2025"),
+      L("You must be a resident of Canada for tax purposes", "Vous devez être résident du Canada aux fins de l'impôt"),
+    ],
+  },
+  benefit_amount: {
+    text: L(
+      "Up to $204.20 a month ($2,448.40 a year) from July 2026 to June 2027, based on your 2025 family income.",
+      "Jusqu'à 204,20 $ par mois (2 448,40 $ par année) de juillet 2026 à juin 2027, selon votre revenu familial de 2025.",
+    ),
+    max_annual_cad: 2448.4,
+    period: "July 2026 – June 2027",
+    source_url: CDB_AMOUNT,
+  },
+  deadlines: [],
+  how_to_apply: L(
+    "Apply online through Service Canada after you're approved for the disability tax credit.",
+    "Faites une demande en ligne auprès de Service Canada une fois le CIPH accordé.",
+  ),
+  status: "needs_verification",
+  last_verified_at: null,
+  approved_by: null,
+  topics: { needs: ["disability_support", "income_support"], life_events: [] },
+  summaries_by_language: {
+    en: "The Canada Disability Benefit is a monthly payment for people aged 18 to 64 who are approved for the disability tax credit and have a low income.",
+    fr: "La Prestation canadienne pour les personnes handicapées est un paiement mensuel pour les personnes de 18 à 64 ans qui ont droit au crédit d'impôt pour personnes handicapées et qui ont un faible revenu.",
+  },
+};
+
+const OSDCP = "https://www.ontario.ca/page/dental-care-low-income-seniors";
+
+const osdcp: ProgramRecord = {
+  id: "on-seniors-dental",
+  name: L("Ontario Seniors Dental Care Program", "Programme ontarien de soins dentaires pour les aînés"),
+  level: "provincial",
+  jurisdiction: "ON",
+  source_url: OSDCP,
+  application_url: OSDCP,
+  eligibility_rules: {
+    version: 1,
+    criteria: [
+      ageAtLeast("age_65", 65, OSDCP, "65 years of age or older"),
+      {
+        id: "no_other_dental_benefits",
+        met: L("You have no other dental benefits", "Vous n'avez pas d'autre assurance dentaire"),
+        failed: L(
+          "You can't have other dental benefits, like private insurance (the Canadian Dental Care Plan is allowed)",
+          "Vous ne devez pas avoir d'autre assurance dentaire, comme une assurance privée (le RCSD est permis)",
+        ),
+        check: L("Tell us if you have dental insurance", "Dites-nous si vous avez une assurance dentaire"),
+        logic: { "==": [{ var: "has_dental_insurance" }, false] },
+        source_url: OSDCP,
+        source_quote: "have no other form of dental benefits, apart from the Canadian Dental Care Plan (CDCP), including private insurance or dental coverage under another government program",
+      },
+      {
+        id: "income_limit",
+        met: L("Your income is under the limit", "Votre revenu est sous la limite"),
+        failed: L(
+          "Net income must be $25,480 or less for a single senior, or $42,290 or less combined for a couple",
+          "Le revenu net doit être de 25 480 $ ou moins pour une personne seule, ou de 42 290 $ ou moins combiné pour un couple",
+        ),
+        check: L("Check whether your net income is under the limit for your situation", "Vérifiez si votre revenu net est sous la limite"),
+        logic: {
+          if: [
+            { "==": [{ var: "has_partner" }, true] }, { "<=": [{ var: "family_income" }, 42290] },
+            { "<=": [{ var: "family_income" }, 25480] },
+          ],
+        },
+        source_url: OSDCP,
+        source_quote: "an annual net income of $25,480 or less for a single senior … a combined annual net income of $42,290 or less for a couple",
+      },
+    ],
+    also_required: [],
+  },
+  benefit_amount: {
+    text: L(
+      "Free routine dental care: check-ups and cleaning, fillings, x-rays and removing teeth.",
+      "Soins dentaires courants gratuits : examens et nettoyage, obturations, radiographies et extractions.",
+    ),
+    max_annual_cad: null,
+    source_url: OSDCP,
+  },
+  deadlines: [],
+  how_to_apply: L("Apply online or by mail.", "Faites une demande en ligne ou par la poste."),
+  status: "needs_verification",
+  last_verified_at: null,
+  approved_by: null,
+  topics: { needs: ["health_dental"], life_events: ["retiring_soon"] },
+  summaries_by_language: {
+    en: "Free dental care for Ontario seniors aged 65 and older with a low income and no other dental benefits.",
+    fr: "Soins dentaires gratuits pour les aînés de l'Ontario de 65 ans et plus à faible revenu et sans autre assurance dentaire.",
+  },
+};
+
+export const SEED_PROGRAMS: ProgramRecord[] = [ccb, cgeb, cdcp, cwb, oas, gis, otb, onChildCare, osap, ow, fairPass, cdb, osdcp];

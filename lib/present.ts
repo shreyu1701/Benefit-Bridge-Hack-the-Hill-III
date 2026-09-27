@@ -5,6 +5,9 @@ import type { UiLang } from "@/lib/i18n/messages";
 import { isStale, type ProgramView } from "@/lib/programs-repo";
 import { matchAll, matchProgram } from "@/lib/rules/engine";
 import { rankFollowups } from "@/lib/rules/followups";
+import { describeEstimate, estimateFor } from "@/lib/rules/amounts";
+import { deriveData } from "@/lib/facts/derive";
+import type { LawForYou } from "@/lib/laws-for-you";
 import type { Confidence, MatchResult } from "@/lib/rules/types";
 import { isAllowedUrl } from "@/lib/sources/allowlist";
 
@@ -29,6 +32,8 @@ export interface ProgramCard {
   failed: Cited[];
   also_required: string[];
   amount: { text: string; source_url: string } | null;
+  /** This person's estimated amount from the published formula; null when an input is unknown. */
+  estimate: { text: string; source_url: string } | null;
   deadlines: { label: string; date: string | null; source_url: string }[];
   how_to_apply: string;
   application_url: string;
@@ -61,6 +66,8 @@ export interface MatchResponse {
   personas: PersonaScenario[];
   /** Needs the person mentioned that no likely or possibly eligible program covers. */
   uncovered_needs: Need[];
+  /** Reviewer-approved bills and new laws that affect (or may affect) this person. */
+  laws: LawForYou[];
 }
 
 const ORDER: Record<Confidence, number> = { likely: 0, possibly: 1, not_eligible: 2 };
@@ -88,6 +95,7 @@ function cite(r: MatchResult, outcome: (o: string) => boolean): Cited[] {
 
 export function buildCards(programs: ProgramView[], facts: Facts, lang: UiLang, now = new Date()): ProgramCard[] {
   const cited = programs.filter((p) => isAllowedUrl(p.source_url));
+  const data = deriveData(facts);
   return cited
     .map((p) => {
       const r = matchProgram(p, facts, lang);
@@ -103,6 +111,11 @@ export function buildCards(programs: ProgramView[], facts: Facts, lang: UiLang, 
         failed: cite(r, (o) => o === "failed"),
         also_required: p.eligibility_rules.also_required.map((a) => a[lang]),
         amount: p.benefit_amount ? { text: p.benefit_amount.text[lang], source_url: p.benefit_amount.source_url } : null,
+        estimate: (() => {
+          if (r.confidence === "not_eligible") return null;
+          const e = estimateFor(p.id, data, now);
+          return e ? { text: describeEstimate(e, lang), source_url: e.source_url } : null;
+        })(),
         deadlines: p.deadlines.map((d) => ({ label: d.label[lang], date: d.date, source_url: d.source_url })),
         how_to_apply: p.how_to_apply[lang],
         application_url: p.application_url,

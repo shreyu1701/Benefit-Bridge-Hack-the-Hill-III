@@ -65,7 +65,7 @@ export class PgPageWatchStore implements PageWatchStore {
 
   async markNeedsVerification(programId: string, reason: string) {
     await query(
-      `UPDATE programs SET status = 'needs_verification', status_reason = $2, updated_at = now() WHERE id = $1 AND status <> 'retired'`,
+      `UPDATE programs SET status = 'needs_verification', status_reason = $2, updated_at = now() WHERE id = $1 AND status NOT IN ('retired', 'draft')`,
       [programId, reason],
     );
   }

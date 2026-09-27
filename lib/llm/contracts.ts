@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { INCOME_BANDS, ProfileSchema } from "@/lib/profile/schema";
+import { INCOME_BANDS, LIFE_EVENTS, NEEDS, ProfileSchema } from "@/lib/profile/schema";
+import { ConditionSchema } from "@/lib/rules/conditions";
 import { toGeminiSchema } from "./json-schema";
 
 /**
@@ -65,6 +66,7 @@ Rules:
 - residency_status: "came to Canada 2 years ago" alone does NOT tell you the status → null. "PR"/"permanent resident" → permanent_resident. "refugee claimant"/"asylum seeker" → refugee_claimant. "accepted refugee"/"protected person" → protected_person. "work permit" → temporary_worker. "study permit"/"international student" → temporary_student.
 - years_in_canada: numeric years (months ÷ 12). "born here" → equal to age if age is known, otherwise null.
 - employment_status: "part-time"/"full-time job" → employed. "retired" → retired. "looking for work"/"laid off" → unemployed.
+- disability_tax_credit: true only if they say the CRA approved them for the disability tax credit (DTC); false if they say they don't have it; otherwise null. Having a disability alone does NOT mean they have the DTC.
 - student_status: college/university/post-secondary → post_secondary_full_time unless they say part-time.
 - files_taxes: true only if they say they filed (or "did my taxes") for last year; false if they say they didn't; otherwise null.
 - life_events and needs: lists chosen ONLY from the allowed values. Include a value only when the person says it about themselves or their household ("I lost my job", "we're expecting", "I look after my mother", "I can't afford rent"). Someone else's situation ("my friend lost her job") does not count. Never add one just because another fact suggests it: low income alone is NOT "food" or "income_support"; having children alone is NOT "childcare". If the description doesn't talk about life changes or what they need help with, return null (not an empty list).
@@ -157,3 +159,69 @@ Rules:
 - Describe only what the diff shows. Quote exact lines as evidence.
 - Flag any change to ages, income limits, amounts, dates, residency or status rules, or application steps.
 - You do not update anything. A human decides. Be concise and factual.`;
+
+// ---------------------------------------------------------------------------
+// 5. Who a bill affects — DRAFT for reviewers; shown to the public only after approval
+// ---------------------------------------------------------------------------
+
+export const BillImpactOutput = z.object({
+  relevant_to_individuals: z.boolean().describe("true only if the bill directly changes benefits, credits, costs, rights or obligations of individuals or families"),
+  needs: z.array(z.enum(NEEDS)).describe("Which of these needs the bill is about. Empty if none."),
+  life_events: z.array(z.enum(LIFE_EVENTS)).describe("Life events that make the bill relevant to someone. Empty if none."),
+  conditions: z
+    .array(ConditionSchema)
+    .describe("Only conditions the SOURCE TEXT states explicitly, all of which must hold. Empty if the text names no specific group."),
+  who_en: z.string().describe("One plain-language sentence (Grade 6) in English: who this would affect and how"),
+  who_fr: z.string().describe("The same sentence in French"),
+  evidence_quotes: z.array(z.string()).describe("Exact short quotes from the source text supporting the needs and conditions"),
+});
+export type BillImpactOutput = z.infer<typeof BillImpactOutput>;
+export const BILL_IMPACT_JSON_SCHEMA = toGeminiSchema(BillImpactOutput);
+
+export const BILL_IMPACT_SYSTEM = `You help a human reviewer decide which people a Canadian bill affects, so a benefits app can tell them about it.
+You receive the bill's title, its stage, and OFFICIAL text about it.
+Rules:
+- Use ONLY the source text. If it doesn't say who is affected, leave conditions empty. Never guess ages, income limits or other thresholds.
+- relevant_to_individuals is false for bills about government procedure, criminal law, trade, or businesses only.
+- conditions use only these facts: age, num_children, household_size, years_in_canada, family_income (CAD per year), province (2-letter code), municipality ("toronto"), residency_status, employment_status, housing, and the yes/no facts has_partner, has_child_under_6, has_child_under_18, has_working_income, disability, disability_tax_credit, is_post_secondary_student, has_dental_insurance, receives_social_assistance, files_taxes (compare yes/no facts with "==" true or false).
+  Examples: "seniors 65 and older" → {fact:"age", op:">=", value:65}. "families with children under 6" → {fact:"has_child_under_6", op:"==", value:true}. "renters" → {fact:"housing", op:"==", value:"rent"}.
+- who_en / who_fr: if the bill has NOT received royal assent, use "would" (never say it is law).
+- You do not decide anything. A human approves or edits your draft.`;
+
+// ---------------------------------------------------------------------------
+// 6. New program drafted from an official page — DRAFT for reviewers only
+// ---------------------------------------------------------------------------
+
+const Bilingual = z.object({ en: z.string(), fr: z.string() });
+
+export const ProgramDraftOutput = z.object({
+  is_benefit_program: z.boolean().describe("false if the page does not describe one benefit, credit or service people can get"),
+  name: Bilingual.describe("Official program name in English and French"),
+  summary: Bilingual.describe("One or two plain sentences (Grade 6): what it gives and to whom"),
+  needs: z.array(z.enum(NEEDS)),
+  life_events: z.array(z.enum(LIFE_EVENTS)),
+  criteria: z
+    .array(
+      z.object({
+        condition: ConditionSchema,
+        met: Bilingual.describe('Shown when the person meets it, e.g. "You are 65 or older"'),
+        failed: Bilingual.describe('Shown when they do not, e.g. "You must be at least 65"'),
+        check: Bilingual.describe('Shown when we do not know, e.g. "Tell us your age"'),
+        source_quote: z.string().describe("The exact sentence on the page this rule comes from"),
+      }),
+    )
+    .describe("One entry per eligibility rule the page states explicitly. Leave out anything you would have to guess."),
+  also_required: z.array(Bilingual).describe("Requirements the conditions cannot express, e.g. 'You must apply within 30 days'"),
+  how_to_apply: Bilingual,
+  amount: Bilingual.nullable().describe("How much, only as stated on the page; null if not stated"),
+});
+export type ProgramDraftOutput = z.infer<typeof ProgramDraftOutput>;
+export const PROGRAM_DRAFT_JSON_SCHEMA = toGeminiSchema(ProgramDraftOutput);
+
+export const PROGRAM_DRAFT_SYSTEM = `You draft a record for a Canadian benefits database from ONE official government page. A human reviewer checks every line before anyone sees it.
+Rules:
+- Use ONLY the page text. Never add rules, amounts or dates from memory.
+- Each criterion must quote the exact sentence it comes from (source_quote). If a rule can't be written with the allowed facts, put it in also_required instead.
+- Allowed facts: age, num_children, household_size, years_in_canada, family_income (CAD per year), province (2-letter code), municipality ("toronto"), residency_status (citizen, permanent_resident, protected_person, refugee_claimant, temporary_worker, temporary_student, visitor, other), employment_status (employed, self_employed, unemployed, retired, not_working), housing (rent, own, other), and yes/no facts has_partner, has_child_under_6, has_child_under_18, has_working_income, disability, disability_tax_credit, is_post_secondary_student, has_dental_insurance, receives_social_assistance, files_taxes (compare with "==" true or false).
+- Do not add a criterion for where the person lives if the program is for the whole jurisdiction: that is added automatically.
+- Write met / failed / check in plain language (Grade 6), in English and in French.`;

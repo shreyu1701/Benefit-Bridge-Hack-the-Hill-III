@@ -10,7 +10,10 @@ import { parseOlaBillList, parseOlaBillPage } from "@/lib/ingest/ontario-bills";
 import { extractPage } from "@/lib/ingest/page-extract";
 import { runPageWatch } from "@/lib/ingest/page-watch";
 import { getLlm, hasLlm } from "@/lib/llm/client";
-import { summarizeOfficialText } from "@/lib/llm/tasks";
+import { draftBillImpact, draftProgram, summarizeOfficialText } from "@/lib/llm/tasks";
+import { failDraftRequest, queuedDraftRequests, saveDraftedProgram, takenProgramIds } from "@/lib/db/program-drafts";
+import { buildProgramFromDraft, draftProgramId } from "@/lib/rules/program-draft";
+import { billsNeedingImpact, saveImpactDraft } from "@/lib/db/bill-impacts";
 import { PoliteFetcher, sha256 } from "@/lib/sources/fetcher";
 
 export const fetcher = new PoliteFetcher();
@@ -118,6 +121,54 @@ async function officialBillText(b: { jurisdiction_code: string; bill_number: str
     if (p.text.length > 200) return { url: b.source_url, text: p.text };
   }
   return null;
+}
+
+/**
+ * Draft who each bill affects (from its official text) for the reviewer queue.
+ * Small batches: each bill is one Gemini request, and the free tier is small.
+ */
+export async function billImpactsJob(limit = Number(process.env.BILL_IMPACT_BATCH ?? 5)) {
+  if (!hasLlm()) return log("bill-impacts", "skipped: no GEMINI_API_KEY");
+  const llm = getLlm();
+  for (const b of await billsNeedingImpact(limit)) {
+    const src = await officialBillText(b);
+    if (!src) {
+      log("bill-impacts", `${b.bill_number}: no official text available yet`);
+      continue;
+    }
+    const draft = await draftBillImpact(llm, {
+      title: b.titles.short_en || b.titles.long_en || b.bill_number,
+      stage: b.current_stage ?? b.status_en ?? "unknown",
+      hasRoyalAssent: Boolean(b.royal_assent_at),
+      sourceText: src.text,
+      sourceUrl: src.url,
+    });
+    await saveImpactDraft(b.id, draft, src.url);
+    log("bill-impacts", `${b.bill_number}: ${draft.relevant ? "drafted for review" : "not relevant to individuals"}${draft.dropped.length ? ` (dropped ${draft.dropped.length} unusable conditions)` : ""}`);
+  }
+}
+
+/** New programs requested by reviewers: draft from the official page, store as invisible "draft". */
+export async function programDraftsJob(limit = 3) {
+  if (!hasLlm()) return log("program-drafts", "skipped: no GEMINI_API_KEY");
+  const llm = getLlm();
+  for (const r of await queuedDraftRequests(limit)) {
+    try {
+      const page = await fetcher.get(r.url); // allow-listed official pages only
+      if (!page.ok) throw new Error(`HTTP ${page.status} ${page.error ?? ""}`.trim());
+      const text = extractPage(page.body).text;
+      if (text.length < 200) throw new Error("The page has too little text to draft from");
+      const draft = await draftProgram(llm, { pageText: text, url: r.url, jurisdiction: r.jurisdiction_code });
+      if (!draft.is_benefit_program) throw new Error("The page doesn't describe a single benefit or service");
+      const id = draftProgramId(r.jurisdiction_code, draft.name.en, await takenProgramIds());
+      const { program, dropped } = buildProgramFromDraft(draft, { url: r.url, jurisdiction: r.jurisdiction_code, id });
+      await saveDraftedProgram(r.id, program, dropped);
+      log("program-drafts", `${r.url} → ${id} (${program.eligibility_rules.criteria.length} rules, ${dropped.length} dropped)`);
+    } catch (e) {
+      await failDraftRequest(r.id, String((e as Error).message ?? e));
+      log("program-drafts", `${r.url}: failed: ${(e as Error).message}`);
+    }
+  }
 }
 
 const stripHtml = (s: string) => cheerio.load(s).text().replace(/\s+/g, " ").trim();

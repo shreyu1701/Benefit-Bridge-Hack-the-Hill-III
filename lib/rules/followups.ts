@@ -18,7 +18,7 @@ export interface RankedQuestion {
   could_change: number;
 }
 
-const BOOL_FACTS = new Set<keyof Facts>(["has_partner", "disability", "has_dental_insurance", "receives_social_assistance", "files_taxes"]);
+const BOOL_FACTS = new Set<keyof Facts>(["has_partner", "disability", "disability_tax_credit", "has_dental_insurance", "receives_social_assistance", "files_taxes"]);
 const NUM_FACTS = new Set<keyof Facts>(["age", "years_in_canada", "household_size"]);
 
 /** Numbers a program compares this fact (or a value derived from it) with. */

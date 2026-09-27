@@ -6,6 +6,8 @@ import { errorResponse, json } from "@/lib/http";
 import { loadPrograms } from "@/lib/programs-repo";
 import { buildCards, buildFollowups, buildPersonas, regionOf, uncoveredNeeds, type MatchResponse, type ProgramCard } from "@/lib/present";
 import { translateMany } from "@/lib/translate-cache";
+import { loadApprovedImpacts } from "@/lib/db/bill-impacts";
+import { lawsForYou } from "@/lib/laws-for-you";
 
 const Body = z.object({
   facts: z.unknown(),
@@ -32,12 +34,14 @@ export async function POST(req: Request) {
     let cards = buildCards(programs, facts, uiLang);
     let followups = buildFollowups(programs, facts, uiLang, body.skip_questions, body.questions);
     let personas = buildPersonas(programs, facts, uiLang);
+    // A database problem here must not take the benefit results down with it.
+    let laws = lawsForYou(await loadApprovedImpacts().catch((e) => (console.error("bill impacts unavailable", e), [])), facts, uiLang);
     let machine_translated = false;
 
     if (base !== "en" && base !== "fr") {
-      const translated = await translateResponse(cards, followups, personas, base).catch(() => null);
+      const translated = await translateResponse(cards, followups, personas, laws, base).catch(() => null);
       if (translated) {
-        ({ cards, followups, personas } = translated);
+        ({ cards, followups, personas, laws } = translated);
         machine_translated = true;
       }
     }
@@ -47,7 +51,7 @@ export async function POST(req: Request) {
     recordMatches(cards, region);
     recordNeedGaps(uncovered_needs, region);
 
-    const res: MatchResponse = { lang: machine_translated ? base : uiLang, machine_translated, cards, followups, personas, uncovered_needs };
+    const res: MatchResponse = { lang: machine_translated ? base : uiLang, machine_translated, cards, followups, personas, uncovered_needs, laws };
     return json(res);
   } catch (e) {
     return errorResponse(e);
@@ -78,6 +82,7 @@ async function translateResponse(
   cards: ProgramCard[],
   followups: MatchResponse["followups"],
   personas: MatchResponse["personas"],
+  laws: MatchResponse["laws"],
   lang: string,
 ) {
   // Collect every display string, translate in one batch, then put them back in the same order.
@@ -85,12 +90,13 @@ async function translateResponse(
   const take = (s: string | null | undefined) => (s ? (texts.push(s), texts.length - 1) : -1);
   const plan = {
     cards: cards.map((c) => ({
-      name: take(c.name), summary: take(c.summary), how: take(c.how_to_apply), amount: take(c.amount?.text),
+      name: take(c.name), summary: take(c.summary), how: take(c.how_to_apply), amount: take(c.amount?.text), est: take(c.estimate?.text),
       met: c.reasons_met.map((r) => take(r.text)), unc: c.uncertain.map((r) => take(r.text)), fail: c.failed.map((r) => take(r.text)),
       also: c.also_required.map(take), dl: c.deadlines.map((d) => take(d.label)),
     })),
     fu: followups.map((f) => ({ q: take(f.question), h: take(f.help) })),
     ps: personas.map((p) => ({ b: take(p.blurb), pos: p.possibly.map((x) => take(x.check)) })),
+    laws: laws.map((l) => ({ title: take(l.title), who: take(l.who), stage: take(l.stage) })),
   };
   const tr = await translateMany(texts, lang);
   if (!tr) return null;
@@ -104,6 +110,7 @@ async function translateResponse(
         summary: g(p.summary, c.summary),
         how_to_apply: g(p.how, c.how_to_apply),
         amount: c.amount ? { ...c.amount, text: g(p.amount, c.amount.text) } : null,
+        estimate: c.estimate ? { ...c.estimate, text: g(p.est, c.estimate.text) } : null,
         reasons_met: c.reasons_met.map((r, j) => ({ ...r, text: g(p.met[j], r.text) })),
         uncertain: c.uncertain.map((r, j) => ({ ...r, text: g(p.unc[j], r.text) })),
         failed: c.failed.map((r, j) => ({ ...r, text: g(p.fail[j], r.text) })),
@@ -116,6 +123,12 @@ async function translateResponse(
       ...p,
       blurb: g(plan.ps[i].b, p.blurb),
       possibly: p.possibly.map((x, j) => ({ ...x, check: g(plan.ps[i].pos[j], x.check) })),
+    })),
+    laws: laws.map((l, i) => ({
+      ...l,
+      title: g(plan.laws[i].title, l.title),
+      who: g(plan.laws[i].who, l.who),
+      stage: l.stage ? g(plan.laws[i].stage, l.stage) : null,
     })),
   };
 }

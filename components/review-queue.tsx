@@ -90,6 +90,11 @@ function ReviewItem({ r, onDone }: { r: ReviewRow; onDone: () => void }) {
       <h2 className="text-lg font-bold">{r.program_name.en} <span className="text-sm font-normal text-muted">({r.program_id}, {r.program_status})</span></h2>
       {r.source_url && <p className="text-sm break-all"><a href={r.source_url} target="_blank" rel="noopener noreferrer" className="underline text-primary">{r.source_url}</a> · HTTP {r.http_status ?? "?"} · page date modified: {r.date_modified ?? "—"}</p>}
 
+      {r.program_status === "draft" && (
+        <Notice>
+          New program drafted by AI from this page. It is hidden from the public. Check every rule and quote against the page; use &quot;Edit eligibility rules&quot; to fix them. Approving makes it visible to everyone.
+        </Notice>
+      )}
       {r.kind === "initial_verification" && (
         <Notice tone="info">First fetch of this page. Read the page text below and confirm the program&apos;s rules match it before approving.</Notice>
       )}

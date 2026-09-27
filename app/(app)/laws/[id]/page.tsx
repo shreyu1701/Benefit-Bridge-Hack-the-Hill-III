@@ -1,12 +1,12 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { billTitle, getBill } from "@/lib/bills-repo";
 import { getT } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Bill" };
+export const generateMetadata = localizedMetadata("bill");
 export const dynamic = "force-dynamic";
 
 export default async function BillPage(props: PageProps<"/laws/[id]">) {

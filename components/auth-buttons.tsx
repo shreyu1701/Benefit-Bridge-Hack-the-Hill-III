@@ -47,9 +47,16 @@ function initials(name?: string | null, email?: string | null): string {
  * instead of an empty slot while useUser() checks /auth/profile.
  */
 export function AccountControl({ compact = false, signedIn }: { compact?: boolean; signedIn: boolean }) {
+  // Guests never call useUser(): it would request /auth/profile and log a 401 in the
+  // console on every page, for an answer the server already gave us.
+  if (!signedIn) return <LoginButton />;
+  return <SignedInControl compact={compact} />;
+}
+
+function SignedInControl({ compact }: { compact: boolean }) {
   const t = useT();
   const { user, isLoading } = useUser();
-  if (!user && (!isLoading || !signedIn)) return <LoginButton />;
+  if (!user && !isLoading) return <LoginButton />;
   if (!user) return <span className="inline-block h-11 w-11" aria-hidden />;
   return (
     <span className="inline-flex items-center gap-1">

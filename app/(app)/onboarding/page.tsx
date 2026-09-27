@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { OnboardingFlow } from "@/components/onboarding/onboarding-flow";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Your profile" };
+export const generateMetadata = localizedMetadata("onboarding");
 
 export default function OnboardingPage() {
   return <OnboardingFlow />;

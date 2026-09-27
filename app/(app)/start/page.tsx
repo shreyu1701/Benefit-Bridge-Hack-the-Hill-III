@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, UserRound } from "lucide-react";
@@ -12,8 +11,9 @@ import { hasEncryptionKey } from "@/lib/crypto";
 import { ENTRY_COPY } from "@/lib/i18n/onboarding";
 import { getUiLang } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Get started" };
+export const generateMetadata = localizedMetadata("start");
 export const dynamic = "force-dynamic";
 
 /** Entry: sign in with Google, or continue as a guest. Nothing forces a login. */

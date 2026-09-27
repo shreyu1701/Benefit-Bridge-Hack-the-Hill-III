@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -6,8 +5,9 @@ import { billTitle, isRecentAssent, listBills, type BillView } from "@/lib/bills
 import type { MessageKey } from "@/lib/i18n/messages";
 import { getT } from "@/lib/i18n/server";
 import { formatDate } from "@/lib/utils";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Recent laws" };
+export const generateMetadata = localizedMetadata("laws");
 export const dynamic = "force-dynamic";
 
 export default async function LawsPage(props: PageProps<"/laws">) {

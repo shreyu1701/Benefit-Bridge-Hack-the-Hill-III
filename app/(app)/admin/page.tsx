@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { ReviewQueue } from "@/components/review-queue";
 import { Notice } from "@/components/ui/notice";
 import { auth0Enabled, currentActor } from "@/lib/auth0";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Review queue", robots: { index: false } };
+export const generateMetadata = localizedMetadata("admin", { robots: { index: false } });
 export const dynamic = "force-dynamic";
 
 /** Reviewer-only page. Eligibility rules change only through approvals made here. */

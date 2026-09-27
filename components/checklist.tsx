@@ -25,8 +25,22 @@ export function Checklist() {
     }
   }, []);
 
-  if (data === undefined) return <p>{t("common.loading")}</p>;
-  if (!data) return <p>{t("checklist.empty")} <Link href="/start" className="underline">{t("nav.home")}</Link></p>;
+  if (data === undefined)
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">{t("checklist.title")}</h1>
+        <p role="status">{t("common.loading")}</p>
+      </div>
+    );
+  if (!data)
+    return (
+      <div className="space-y-4">
+        <h1 className="text-2xl font-bold">{t("checklist.title")}</h1>
+        <p>
+          {t("checklist.empty")} <Link href="/start" className="underline">{t("nav.home")}</Link>
+        </p>
+      </div>
+    );
 
   const items = data.cards.filter((c) => c.confidence !== "not_eligible");
   const asText = () =>

@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { getT } from "@/lib/i18n/server";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Privacy" };
+export const generateMetadata = localizedMetadata("privacy");
 
 const CONTENT = {
   en: {

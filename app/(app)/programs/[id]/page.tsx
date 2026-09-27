@@ -4,14 +4,14 @@ import { ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
-import { getT } from "@/lib/i18n/server";
+import { getT, getUiLang } from "@/lib/i18n/server";
 import { isStale, loadProgram } from "@/lib/programs-repo";
 import { jurisdictionCriteria } from "@/lib/rules/engine";
 import { formatDate } from "@/lib/utils";
 
 export async function generateMetadata(props: PageProps<"/programs/[id]">): Promise<Metadata> {
-  const p = await loadProgram((await props.params).id);
-  return { title: p?.name.en ?? "Program" };
+  const [p, lang] = await Promise.all([loadProgram((await props.params).id), getUiLang()]);
+  return { title: p?.name[lang] ?? (lang === "fr" ? "Programme" : "Program") };
 }
 
 export default async function ProgramPage(props: PageProps<"/programs/[id]">) {

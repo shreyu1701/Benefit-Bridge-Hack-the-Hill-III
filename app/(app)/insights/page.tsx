@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
 import { hasDatabase, query } from "@/lib/db/pool";
 import { getT } from "@/lib/i18n/server";
 import { loadPrograms } from "@/lib/programs-repo";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "Benefits people may be missing" };
+export const generateMetadata = localizedMetadata("insights");
 export const dynamic = "force-dynamic";
 
 /** Public dashboard over the match_daily continuous aggregate (anonymous; small counts suppressed). */

@@ -1,7 +1,7 @@
-import type { Metadata } from "next";
 import { Checklist } from "@/components/checklist";
+import { localizedMetadata } from "@/lib/i18n/titles";
 
-export const metadata: Metadata = { title: "My benefits checklist" };
+export const generateMetadata = localizedMetadata("checklist");
 
 export default function ChecklistPage() {
   return <Checklist />;

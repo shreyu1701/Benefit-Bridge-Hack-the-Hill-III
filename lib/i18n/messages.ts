@@ -6,6 +6,10 @@
 const en = {
   "app.name": "Benefit Bridge",
   "app.tagline": "Find government benefits you may qualify for — explained in plain language.",
+  "nav.landing": "Home",
+  "nav.openMenu": "Open menu",
+  "nav.closeMenu": "Close menu",
+  "footer.independent": "Independent tool. Not affiliated with the Government of Canada. The final decision on any benefit is made by the program. This is not legal or financial advice.",
   "nav.home": "Find benefits",
   "nav.laws": "Recent laws",
   "nav.insights": "Missed benefits",
@@ -22,7 +26,7 @@ const en = {
   "home.placeholder": "Describe your situation…",
   "home.privacy":
     "We don't save what you type or say. Please don't include your SIN, exact income, or document numbers.",
-  "home.submit": "Continue",
+  "home.submit": "Find my benefits",
   "home.working": "Understanding your situation…",
   "home.manual": "Or fill in a short form instead",
   "home.record": "Speak",
@@ -111,6 +115,7 @@ const en = {
   "common.no": "No",
   "common.loading": "Loading…",
   "common.error": "Something went wrong. Please try again.",
+  "common.retry": "Try again",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -118,6 +123,10 @@ export type MessageKey = keyof typeof en;
 const fr: Record<MessageKey, string> = {
   "app.name": "Benefit Bridge",
   "app.tagline": "Trouvez les prestations gouvernementales auxquelles vous pourriez avoir droit — expliquées simplement.",
+  "nav.landing": "Accueil",
+  "nav.openMenu": "Ouvrir le menu",
+  "nav.closeMenu": "Fermer le menu",
+  "footer.independent": "Outil indépendant, non affilié au gouvernement du Canada. La décision finale sur toute prestation revient au programme. Ceci n'est pas un conseil juridique ou financier.",
   "nav.home": "Trouver des prestations",
   "nav.laws": "Lois récentes",
   "nav.insights": "Prestations manquées",
@@ -134,7 +143,7 @@ const fr: Record<MessageKey, string> = {
   "home.placeholder": "Décrivez votre situation…",
   "home.privacy":
     "Nous ne conservons pas ce que vous écrivez ou dites. N'incluez pas votre NAS, votre revenu exact ni vos numéros de documents.",
-  "home.submit": "Continuer",
+  "home.submit": "Trouver mes prestations",
   "home.working": "Analyse de votre situation…",
   "home.manual": "Ou remplissez plutôt un court formulaire",
   "home.record": "Parler",
@@ -223,6 +232,7 @@ const fr: Record<MessageKey, string> = {
   "common.no": "Non",
   "common.loading": "Chargement…",
   "common.error": "Une erreur s'est produite. Veuillez réessayer.",
+  "common.retry": "Réessayer",
 };
 
 export const MESSAGES = { en, fr } as const;

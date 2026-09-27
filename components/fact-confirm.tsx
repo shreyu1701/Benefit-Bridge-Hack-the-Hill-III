@@ -141,7 +141,7 @@ export function FactConfirm() {
           variant="ghost"
           onClick={() => {
             clearFlow();
-            router.push("/");
+            router.push("/start");
           }}
           disabled={submitting}
         >

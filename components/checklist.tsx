@@ -26,7 +26,7 @@ export function Checklist() {
   }, []);
 
   if (data === undefined) return <p>{t("common.loading")}</p>;
-  if (!data) return <p>{t("checklist.empty")} <Link href="/" className="underline">{t("nav.home")}</Link></p>;
+  if (!data) return <p>{t("checklist.empty")} <Link href="/start" className="underline">{t("nav.home")}</Link></p>;
 
   const items = data.cards.filter((c) => c.confidence !== "not_eligible");
   const asText = () =>

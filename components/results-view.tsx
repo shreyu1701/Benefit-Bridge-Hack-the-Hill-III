@@ -67,7 +67,7 @@ export function ResultsView() {
   useEffect(() => {
     const f = loadFlow();
     if (!f) {
-      router.replace("/");
+      router.replace("/start");
       return;
     }
     // eslint-disable-next-line react-hooks/set-state-in-effect

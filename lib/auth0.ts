@@ -1,4 +1,6 @@
 import { Auth0Client } from "@auth0/nextjs-auth0/server";
+import type { SdkError } from "@auth0/nextjs-auth0/errors";
+import { NextResponse } from "next/server";
 import { cookies, headers } from "next/headers";
 import { timingSafeEqual } from "node:crypto";
 
@@ -23,8 +25,38 @@ if (missingAuth0Vars.length > 0 && missingAuth0Vars.length < AUTH0_VARS.length) 
   console.warn(`Auth0 sign-in is OFF: missing ${missingAuth0Vars.join(", ")}. Everyone is a guest until all four are set.`);
 }
 
+/** Only same-site paths may be used after login (no open redirects). */
+export function safeReturnTo(returnTo: string | undefined): string {
+  return returnTo && returnTo.startsWith("/") && !returnTo.startsWith("//") ? returnTo : "/";
+}
+
+/** The real reason behind the SDK's generic "An error occurred during the authorization flow." */
+export function describeAuthError(error: SdkError): { code: string; detail: string } {
+  const cause = (error as SdkError & { cause?: { code?: string; message?: string } }).cause;
+  return {
+    code: cause?.code || error.code || "unknown_error",
+    detail: (cause?.message || error.message || "").slice(0, 300),
+  };
+}
+
 export const auth0 = auth0Enabled
-  ? new Auth0Client({ authorizationParameters: { scope: "openid profile email" } })
+  ? new Auth0Client({
+      authorizationParameters: { scope: "openid profile email" },
+      // Replaces the SDK default, which answers any callback error with a bare 500 page.
+      async onCallback(error, ctx) {
+        const base = ctx.appBaseUrl ?? process.env.APP_BASE_URL ?? "http://localhost:3000";
+        if (error) {
+          const { code, detail } = describeAuthError(error);
+          // Server log (Vercel → Logs): the actual reason, never tokens or personal data.
+          console.error(`Auth0 callback failed: ${error.name} [${code}] ${detail}`);
+          const url = new URL("/start", base);
+          url.searchParams.set("login_error", code);
+          if (detail) url.searchParams.set("login_detail", detail);
+          return NextResponse.redirect(url);
+        }
+        return NextResponse.redirect(new URL(safeReturnTo(ctx.returnTo), base));
+      },
+    })
   : null;
 
 /** Auth0's name for its Google social connection. */

@@ -1,0 +1,29 @@
+# Backend-only stack for the Vercel setup: the website runs on Vercel, the
+# database is managed (e.g. Supabase, Canada Central), and this server runs
+# only the ingestion worker. It opens NO inbound ports.
+#
+# Usage (on the Vultr server):
+#   docker compose -f docker-compose.worker.yml --env-file .env.worker up -d --build
+# Settings: deploy/env.worker.example → .env.worker
+
+name: benefit-bridge-worker
+
+x-app: &app
+  build: .
+  image: benefit-bridge:latest
+  env_file: .env.worker
+
+services:
+  # Applies migrations and seeds programs, then exits. Safe to run on every deploy.
+  migrate:
+    <<: *app
+    command: ["sh", "-c", "npx tsx scripts/migrate.ts && npx tsx scripts/seed.ts"]
+    restart: "no"
+
+  worker:
+    <<: *app
+    command: ["npx", "tsx", "worker/index.ts"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully

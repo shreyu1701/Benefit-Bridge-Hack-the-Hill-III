@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Notice } from "@/components/ui/notice";
 import { FactInput } from "@/components/fact-input";
 import { ProgramCard } from "@/components/program-card";
 import { useLang, useT } from "@/components/lang-provider";
+import { ENUM_LABELS } from "@/lib/facts/labels";
 import type { Facts } from "@/lib/facts/schema";
 import type { MatchResponse } from "@/lib/present";
 import { loadFlow, saveFlow, type FlowState } from "@/lib/session-state";
@@ -26,6 +27,11 @@ export function ResultsView() {
   const [skip, setSkip] = useState<string[]>([]);
   const [showNot, setShowNot] = useState(false);
   const [answers, setAnswers] = useState<Partial<Facts>>({});
+  const [moreQuestions, setMoreQuestions] = useState(false);
+  /** After an answer re-runs the match: which results moved (read out by the live region). */
+  const [moved, setMoved] = useState<MatchResponse["cards"] | null>(null);
+  const lastCards = useRef<MatchResponse["cards"] | null>(null);
+  const answered = useRef(false);
 
   // Results language: the user's own language if it's not English/French, else the UI language.
   const resultsLang =
@@ -46,10 +52,17 @@ export function ResultsView() {
             facts,
             lang: resultsLang,
             skip_questions: skipList,
+            questions: moreQuestions ? 6 : 3,
           }),
         });
         if (!res.ok) throw new Error();
         const d: MatchResponse = await res.json();
+        if (answered.current && lastCards.current) {
+          const before = new Map(lastCards.current.map((c) => [c.id, c.confidence]));
+          setMoved(d.cards.filter((c) => before.has(c.id) && before.get(c.id) !== c.confidence));
+        }
+        answered.current = false;
+        lastCards.current = d.cards;
         setData(d);
         try {
           sessionStorage.setItem("bb.results", JSON.stringify(d));
@@ -61,7 +74,7 @@ export function ResultsView() {
         setLoading(false);
       }
     },
-    [resultsLang],
+    [resultsLang, moreQuestions],
   );
 
   useEffect(() => {
@@ -95,18 +108,30 @@ export function ResultsView() {
       </div>
     );
 
-  if (!data || !flow || loading)
+  // Keep the page (and its live region) on screen while an answer re-runs the match.
+  if (!data || !flow)
     return <p aria-live="polite">{t("common.loading")}</p>;
 
   const answer = (k: keyof Facts) => {
     if (answers[k] === undefined || answers[k] === null)
       return setSkip((s) => [...s, k]);
+    answered.current = true;
     const next = { ...flow, facts: { ...flow.facts, [k]: answers[k] } };
     saveFlow(next);
     setFlow(next);
   };
 
   const eligible = data.cards.filter((c) => c.confidence !== "not_eligible");
+  const label = (v: string) => ENUM_LABELS[v]?.[uiLang] ?? v;
+  const mentioned = [...(flow.facts.life_events ?? []), ...(flow.facts.needs ?? [])];
+  const uncovered = data.uncovered_needs ?? [];
+  const verdict = { likely: t("results.likely"), possibly: t("results.possibly"), not_eligible: t("results.not") };
+  const announce =
+    moved === null
+      ? ""
+      : moved.length
+        ? `${t("results.changed")} ${moved.map((c) => `${c.name}: ${verdict[c.confidence]}`).join("; ")}.`
+        : t("results.noChange");
   const notEligible = data.cards.filter((c) => c.confidence === "not_eligible");
 
   return (
@@ -119,6 +144,31 @@ export function ResultsView() {
       </div>
 
       <Notice>{t("disclaimer")}</Notice>
+
+      <div aria-live="polite" className="empty:hidden">
+        {loading ? <p className="text-muted">{t("results.updating")}</p> : announce ? <Notice tone="info">{announce}</Notice> : null}
+      </div>
+
+      {mentioned.length > 0 && (
+        <p>
+          <strong>{t("results.mentioned")} {mentioned.map(label).join(", ")}</strong>, {t("results.mentionedNote")}
+        </p>
+      )}
+
+      {uncovered.length > 0 && (
+        <Notice tone="info">
+          {t("results.uncovered")} <strong>{uncovered.map(label).join(", ")}</strong>.{" "}
+          <a
+            href={uiLang === "fr" ? "https://www.canada.ca/fr/services/prestations.html" : "https://www.canada.ca/en/services/benefits.html"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline"
+          >
+            {t("results.uncoveredLink")}
+            <span className="sr-only"> (opens official page in a new tab)</span>
+          </a>
+        </Notice>
+      )}
 
       {data.machine_translated && (
         <Notice tone="info">{t("results.machineTranslated")}</Notice>
@@ -137,6 +187,11 @@ export function ResultsView() {
                 value={(answers[q.fact] ?? null) as never}
                 onChange={(v) => setAnswers((a) => ({ ...a, [q.fact]: v }))}
               />
+              {q.could_change > 0 && (
+                <p className="text-sm text-muted">
+                  {q.could_change === 1 ? t("q.couldChangeOne") : t("q.couldChangeMany").replace("{n}", String(q.could_change))}
+                </p>
+              )}
               <div className="flex gap-2">
                 <Button size="sm" onClick={() => answer(q.fact)}>
                   {t("q.answer")}
@@ -151,6 +206,11 @@ export function ResultsView() {
               </div>
             </Card>
           ))}
+          {!moreQuestions && data.followups.length >= 3 && (
+            <Button variant="outline" size="sm" onClick={() => setMoreQuestions(true)} disabled={loading}>
+              {t("q.more")}
+            </Button>
+          )}
         </section>
       )}
 

@@ -3,6 +3,8 @@ import {
   EMPLOYMENT_STATUSES,
   HOUSING,
   INCOME_BANDS,
+  LIFE_EVENTS,
+  NEEDS,
   PROVINCES,
   RESIDENCY_STATUSES,
   STUDENT_STATUSES,
@@ -50,6 +52,16 @@ export const FACT_META: Record<keyof Facts, { label: L; question: L; help?: L }>
       fr: "La plupart des prestations passent par la déclaration de revenus, même sans revenu. Vous pouvez encore produire pour les années passées.",
     },
   },
+  life_events: {
+    label: { en: "What's happening", fr: "Ce qui se passe" },
+    question: { en: "Has any of this happened recently?", fr: "Est-ce que l'une de ces situations vous arrive?" },
+    help: { en: "This only helps us show the most relevant results first. It never changes whether you qualify.", fr: "Cela nous aide seulement à montrer d'abord les résultats les plus utiles. Cela ne change jamais votre admissibilité." },
+  },
+  needs: {
+    label: { en: "Help with", fr: "Aide pour" },
+    question: { en: "What would you like help with?", fr: "Pour quoi aimeriez-vous de l'aide?" },
+    help: { en: "This only helps us show the most relevant results first. It never changes whether you qualify.", fr: "Cela nous aide seulement à montrer d'abord les résultats les plus utiles. Cela ne change jamais votre admissibilité." },
+  },
 };
 
 export const ENUM_LABELS: Record<string, L> = {
@@ -76,6 +88,27 @@ export const ENUM_LABELS: Record<string, L> = {
   // housing
   rent: { en: "Rent", fr: "Locataire" },
   own: { en: "Own", fr: "Propriétaire" },
+  // life events
+  lost_job: { en: "Lost a job", fr: "Perte d'emploi" },
+  expecting_or_new_baby: { en: "Expecting or new baby", fr: "Bébé en route ou nouveau-né" },
+  separated: { en: "Separated or divorced", fr: "Séparation ou divorce" },
+  moved_recently: { en: "Moved recently", fr: "Déménagement récent" },
+  started_school: { en: "Started school", fr: "Début des études" },
+  retiring_soon: { en: "Retiring", fr: "Départ à la retraite" },
+  death_in_family: { en: "Death in the family", fr: "Décès dans la famille" },
+  new_to_canada: { en: "New to Canada", fr: "Nouvel arrivant au Canada" },
+  caring_for_someone: { en: "Caring for someone", fr: "Proche aidant" },
+  // needs
+  rent_housing: { en: "Rent or housing", fr: "Loyer ou logement" },
+  food: { en: "Food", fr: "Alimentation" },
+  childcare: { en: "Child care", fr: "Garde d'enfants" },
+  health_dental: { en: "Health or dental care", fr: "Santé ou soins dentaires" },
+  disability_support: { en: "Disability support", fr: "Soutien aux personnes handicapées" },
+  transit: { en: "Transit", fr: "Transport en commun" },
+  income_support: { en: "Money to live on", fr: "Revenu de subsistance" },
+  education_training: { en: "School or training", fr: "Études ou formation" },
+  caregiving: { en: "Caregiving", fr: "Soins à un proche" },
+  taxes_filing: { en: "Filing taxes", fr: "Déclaration de revenus" },
 };
 
 export const PROVINCE_LABELS: Record<string, L> = {
@@ -114,6 +147,12 @@ export function formatFact(key: keyof Facts, value: Facts[keyof Facts], lang: Ui
     case "receives_social_assistance":
     case "files_taxes":
       return value ? yes : no;
+    case "life_events":
+    case "needs": {
+      const a = value as string[];
+      if (!a.length) return lang === "fr" ? "Rien de particulier" : "Nothing in particular";
+      return a.map((v) => ENUM_LABELS[v]?.[lang] ?? v).join(", ");
+    }
     case "years_in_canada":
       return `${Math.round((value as number) * 10) / 10}`;
     default:
@@ -128,4 +167,6 @@ export const OPTIONS = {
   student_status: STUDENT_STATUSES,
   housing: HOUSING,
   family_income_band: INCOME_BANDS.map((b) => b.id),
+  life_events: LIFE_EVENTS,
+  needs: NEEDS,
 };

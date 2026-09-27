@@ -51,6 +51,39 @@ export const STUDENT_STATUSES = [
 export const HOUSING = ["rent", "own", "other"] as const;
 
 /**
+ * What is happening in the person's life, and what they want help with.
+ * These never decide eligibility: they only put the most relevant results first
+ * (programs are tagged with the same values). Fixed lists, so the model can only
+ * pick from them.
+ */
+export const LIFE_EVENTS = [
+  "lost_job",
+  "expecting_or_new_baby",
+  "separated",
+  "moved_recently",
+  "started_school",
+  "retiring_soon",
+  "death_in_family",
+  "new_to_canada",
+  "caring_for_someone",
+] as const;
+export type LifeEvent = (typeof LIFE_EVENTS)[number];
+
+export const NEEDS = [
+  "rent_housing",
+  "food",
+  "childcare",
+  "health_dental",
+  "disability_support",
+  "transit",
+  "income_support",
+  "education_training",
+  "caregiving",
+  "taxes_filing",
+] as const;
+export type Need = (typeof NEEDS)[number];
+
+/**
  * Annual (adjusted) family net income bands. `max` is inclusive.
  * Bands are deliberately finer at the low end, where most program thresholds sit.
  * Changing bands is a data change: the engine only reads `min`/`max`.
@@ -90,7 +123,13 @@ export const ProfileSchema = z.object({
   receives_social_assistance: z.boolean().nullable(),
   /** Filed a tax return for last year. Most federal and Ontario benefits are paid through the tax system. */
   files_taxes: z.boolean().nullable(),
+  /** `null` = not discussed, `[]` = discussed and none apply. Ranking only, never eligibility. */
+  life_events: z.array(z.enum(LIFE_EVENTS)).max(LIFE_EVENTS.length).nullable(),
+  needs: z.array(z.enum(NEEDS)).max(NEEDS.length).nullable(),
 });
+
+/** Profile fields that hold a set of choices: merged by union, shown as chips. */
+export const LIST_KEYS = ["life_events", "needs"] as const satisfies readonly (keyof z.infer<typeof ProfileSchema>)[];
 export type Profile = z.infer<typeof ProfileSchema>;
 export type ProfileKey = keyof Profile;
 

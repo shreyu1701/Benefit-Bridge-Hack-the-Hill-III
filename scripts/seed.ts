@@ -45,6 +45,8 @@ async function main() {
         [p.id, p.name, p.level, p.jurisdiction, p.eligibility_rules, p.benefit_amount, JSON.stringify(p.deadlines), p.how_to_apply,
          p.application_url, p.source_url, lawId, p.summaries_by_language],
       );
+      // Topics only order results (never eligibility), so they are kept current even on approved programs.
+      await c.query(`UPDATE programs SET topics = $2 WHERE id = $1`, [p.id, p.topics]);
       for (const w of watchedUrlsFor(p)) {
         await c.query(
           `INSERT INTO program_sources (program_id, url, check_interval_hours) VALUES ($1,$2,$3)

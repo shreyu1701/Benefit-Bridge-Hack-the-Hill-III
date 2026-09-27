@@ -30,6 +30,8 @@ const base: Facts = {
   housing: null,
   receives_social_assistance: false,
   files_taxes: true,
+  life_events: null,
+  needs: null,
 };
 
 export const PERSONAS: Persona[] = [

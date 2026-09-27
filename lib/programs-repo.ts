@@ -61,6 +61,8 @@ export async function loadPrograms(): Promise<ProgramView[]> {
   );
   return rows.map((r) => ({
     ...(r as unknown as ProgramView),
+    // Before migration 005 runs there is no topics column: rank without topics rather than fail.
+    topics: (r.topics as ProgramView["topics"] | undefined) ?? { needs: [], life_events: [] },
     last_verified_at: r.last_verified_at ? new Date(r.last_verified_at as string).toISOString() : null,
   }));
 }

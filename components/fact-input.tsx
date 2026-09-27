@@ -5,7 +5,7 @@ import { useLang, useT } from "@/components/lang-provider";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ENUM_LABELS, FACT_META, incomeLabel, OPTIONS, PROVINCE_LABELS } from "@/lib/facts/labels";
-import type { Facts } from "@/lib/facts/schema";
+import { LIST_KEYS, type Facts } from "@/lib/facts/schema";
 import { cn } from "@/lib/utils";
 
 type Key = keyof Facts;
@@ -94,6 +94,21 @@ export function FactInput({ k, value, onChange, idPrefix = "f", unknownLabel, er
   }
 
   const options = OPTIONS[k as keyof typeof OPTIONS] as readonly string[];
+
+  if ((LIST_KEYS as readonly Key[]).includes(k)) {
+    return (
+      <Chips
+        id={id}
+        legend={meta.question[lang]}
+        help={Help}
+        describedBy={describedBy}
+        options={options.map((o) => [o, ENUM_LABELS[o]?.[lang] ?? o] as [string, string])}
+        value={(value as string[] | null) ?? []}
+        onChange={(v) => onChange(v as never)}
+      />
+    );
+  }
+
   const labelOf = (o: string) =>
     k === "province" ? PROVINCE_LABELS[o][lang] : k === "family_income_band" ? incomeLabel(o, lang) : ENUM_LABELS[o]?.[lang] ?? o;
 
@@ -169,6 +184,46 @@ function Choice({
       </RadioGroup>
       {err}
     </div>
+  );
+}
+
+/** Pick any number: real checkboxes styled as chips, grouped in a fieldset. */
+function Chips({
+  id, legend, help, describedBy, options, value, onChange,
+}: {
+  id: string; legend: string; help: React.ReactNode; describedBy?: string;
+  options: [string, string][]; value: string[]; onChange: (v: string[]) => void;
+}) {
+  return (
+    <fieldset className="space-y-2" aria-describedby={describedBy}>
+      <legend className="font-semibold">{legend}</legend>
+      {help}
+      <div className="flex flex-wrap gap-2">
+        {options.map(([v, label]) => {
+          const on = value.includes(v);
+          return (
+            <label
+              key={v}
+              htmlFor={`${id}-${v}`}
+              className={cn(
+                "inline-flex min-h-11 cursor-pointer items-center gap-2.5 rounded-full border px-3.5 py-2 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                on ? "border-primary bg-primary-soft" : "border-border bg-card hover:border-border-strong",
+              )}
+            >
+              <input
+                id={`${id}-${v}`}
+                type="checkbox"
+                className="size-5 accent-primary"
+                checked={on}
+                // Keep the list in the schema's order, so the same choices always compare equal.
+                onChange={(e) => onChange(options.map(([o]) => o).filter((o) => (o === v ? e.target.checked : value.includes(o))))}
+              />
+              {label}
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 

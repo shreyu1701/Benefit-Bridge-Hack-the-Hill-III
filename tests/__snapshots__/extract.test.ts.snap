@@ -1,0 +1,345 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`sensitive-data scrubbing > what Gemini is asked for is reviewed on every change (snapshot) 1`] = `
+{
+  "properties": {
+    "detected_language": {
+      "description": "BCP-47 code of the user's input language, e.g. 'en', 'fr', 'es', 'zh', 'ar', 'pa'",
+      "type": "string",
+    },
+    "evidence": {
+      "description": "For each non-null fact, the short span of the user's text it came from",
+      "items": {
+        "properties": {
+          "fact": {
+            "type": "string",
+          },
+          "quote": {
+            "type": "string",
+          },
+        },
+        "required": [
+          "fact",
+          "quote",
+        ],
+        "type": "object",
+      },
+      "type": "array",
+    },
+    "facts": {
+      "properties": {
+        "age": {
+          "anyOf": [
+            {
+              "maximum": 120,
+              "minimum": 0,
+              "type": "integer",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "children_ages": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 25,
+                "minimum": 0,
+                "type": "integer",
+              },
+              "maxItems": 15,
+              "type": "array",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "city": {
+          "anyOf": [
+            {
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "disability": {
+          "anyOf": [
+            {
+              "type": "boolean",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "employment_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "employed",
+                "self_employed",
+                "unemployed",
+                "retired",
+                "not_working",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "family_income_band": {
+          "anyOf": [
+            {
+              "enum": [
+                "under_15k",
+                "15k_25k",
+                "25k_35k",
+                "35k_50k",
+                "50k_70k",
+                "70k_80k",
+                "80k_90k",
+                "90k_120k",
+                "120k_150k",
+                "over_150k",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "files_taxes": {
+          "anyOf": [
+            {
+              "type": "boolean",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "has_dental_insurance": {
+          "anyOf": [
+            {
+              "type": "boolean",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "has_partner": {
+          "anyOf": [
+            {
+              "type": "boolean",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "household_size": {
+          "anyOf": [
+            {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "housing": {
+          "anyOf": [
+            {
+              "enum": [
+                "rent",
+                "own",
+                "other",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "life_events": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "lost_job",
+                  "expecting_or_new_baby",
+                  "separated",
+                  "moved_recently",
+                  "started_school",
+                  "retiring_soon",
+                  "death_in_family",
+                  "new_to_canada",
+                  "caring_for_someone",
+                ],
+                "type": "string",
+              },
+              "maxItems": 9,
+              "type": "array",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "needs": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [
+                  "rent_housing",
+                  "food",
+                  "childcare",
+                  "health_dental",
+                  "disability_support",
+                  "transit",
+                  "income_support",
+                  "education_training",
+                  "caregiving",
+                  "taxes_filing",
+                ],
+                "type": "string",
+              },
+              "maxItems": 10,
+              "type": "array",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "province": {
+          "anyOf": [
+            {
+              "enum": [
+                "AB",
+                "BC",
+                "MB",
+                "NB",
+                "NL",
+                "NS",
+                "NT",
+                "NU",
+                "ON",
+                "PE",
+                "QC",
+                "SK",
+                "YT",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "receives_social_assistance": {
+          "anyOf": [
+            {
+              "type": "boolean",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "residency_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "citizen",
+                "permanent_resident",
+                "protected_person",
+                "refugee_claimant",
+                "temporary_worker",
+                "temporary_student",
+                "visitor",
+                "other",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "student_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "none",
+                "high_school",
+                "post_secondary_full_time",
+                "post_secondary_part_time",
+              ],
+              "type": "string",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+        "years_in_canada": {
+          "anyOf": [
+            {
+              "maximum": 120,
+              "minimum": 0,
+              "type": "number",
+            },
+            {
+              "type": "null",
+            },
+          ],
+        },
+      },
+      "required": [
+        "age",
+        "children_ages",
+        "city",
+        "disability",
+        "employment_status",
+        "family_income_band",
+        "files_taxes",
+        "has_dental_insurance",
+        "has_partner",
+        "household_size",
+        "housing",
+        "life_events",
+        "needs",
+        "province",
+        "receives_social_assistance",
+        "residency_status",
+        "student_status",
+        "years_in_canada",
+      ],
+      "type": "object",
+    },
+    "sensitive_data_ignored": {
+      "description": "true if the user volunteered SIN, exact income, or document numbers that were NOT extracted",
+      "type": "boolean",
+    },
+  },
+  "required": [
+    "detected_language",
+    "facts",
+    "evidence",
+    "sensitive_data_ignored",
+  ],
+  "type": "object",
+}
+`;

@@ -1,4 +1,6 @@
-import { emptyFacts, FACT_KEYS, FactsSchema, type Facts } from "@/lib/facts/schema";
+import { emptyFacts, FACT_KEYS, FactsSchema, LIFE_EVENTS, LIST_KEYS, NEEDS, type Facts } from "@/lib/facts/schema";
+
+const isListKey = (k: string): k is (typeof LIST_KEYS)[number] => (LIST_KEYS as readonly string[]).includes(k);
 import type { LlmClient } from "./client";
 import {
   CHANGE_REVIEW_JSON_SCHEMA,
@@ -55,8 +57,15 @@ export async function extractFacts(llm: LlmClient, rawText: string): Promise<Ext
   const facts = emptyFacts();
   const rejected: string[] = [];
   for (const k of FACT_KEYS) {
-    const v = out.facts[k];
+    let v = out.facts[k];
     if (v === undefined || v === null) continue;
+    // Choice lists: keep the valid choices and drop the rest, instead of losing the whole list.
+    if (isListKey(k) && Array.isArray(v)) {
+      const allowed: readonly unknown[] = k === "life_events" ? LIFE_EVENTS : NEEDS;
+      const kept = [...new Set(v)].filter((x) => allowed.includes(x));
+      if (kept.length < v.length) rejected.push(k);
+      v = kept;
+    }
     const r = FactsSchema.shape[k].safeParse(v);
     if (r.success) (facts as Record<string, unknown>)[k] = r.data;
     else rejected.push(k);

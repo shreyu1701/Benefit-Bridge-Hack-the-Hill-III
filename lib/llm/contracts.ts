@@ -67,6 +67,9 @@ Rules:
 - employment_status: "part-time"/"full-time job" → employed. "retired" → retired. "looking for work"/"laid off" → unemployed.
 - student_status: college/university/post-secondary → post_secondary_full_time unless they say part-time.
 - files_taxes: true only if they say they filed (or "did my taxes") for last year; false if they say they didn't; otherwise null.
+- life_events and needs: lists chosen ONLY from the allowed values. Include a value only when the person says it about themselves or their household ("I lost my job", "we're expecting", "I look after my mother", "I can't afford rent"). Someone else's situation ("my friend lost her job") does not count. Never add one just because another fact suggests it: low income alone is NOT "food" or "income_support"; having children alone is NOT "childcare". If the description doesn't talk about life changes or what they need help with, return null (not an empty list).
+  - lost_job: laid off, fired, job ended, lost hours to zero. new_to_canada: arrived in the last few years. caring_for_someone: looks after an ill, elderly or disabled family member. expecting_or_new_baby: pregnant or a baby born recently; do NOT invent a child age for it.
+  - rent_housing: rent, eviction, housing costs. income_support: needs money to live on. taxes_filing: needs help doing taxes.
 - If the person includes a Social Insurance Number, exact income figures to the dollar, or immigration document numbers, do not copy them anywhere in your output; set sensitive_data_ignored to true. (You may still pick the income band.)
 - evidence: for every non-null fact, include a short quote from the input that supports it.`;
 

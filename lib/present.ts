@@ -1,9 +1,10 @@
 import { PERSONAS } from "@/data/personas";
 import { FACT_META } from "@/lib/facts/labels";
-import type { Facts } from "@/lib/facts/schema";
+import type { Facts, LifeEvent, Need } from "@/lib/facts/schema";
 import type { UiLang } from "@/lib/i18n/messages";
 import { isStale, type ProgramView } from "@/lib/programs-repo";
-import { followUpFacts, matchAll, matchProgram } from "@/lib/rules/engine";
+import { matchAll, matchProgram } from "@/lib/rules/engine";
+import { rankFollowups } from "@/lib/rules/followups";
 import type { Confidence, MatchResult } from "@/lib/rules/types";
 import { isAllowedUrl } from "@/lib/sources/allowlist";
 
@@ -39,6 +40,8 @@ export interface ProgramCard {
   last_verified_at: string | null;
   source_last_changed: string | null;
   law: { title: string; citation: string; what_changed: string; approved: boolean; source_url: string } | null;
+  /** What this program has in common with what the person said they need or are going through. */
+  relevance: { needs: Need[]; life_events: LifeEvent[] };
 }
 
 export interface PersonaScenario {
@@ -53,11 +56,31 @@ export interface MatchResponse {
   lang: string;
   machine_translated: boolean;
   cards: ProgramCard[];
-  followups: { fact: keyof Facts; question: string; help: string | null }[];
+  /** Most useful first; `could_change` = how many results the answer could move. */
+  followups: { fact: keyof Facts; question: string; help: string | null; could_change: number }[];
   personas: PersonaScenario[];
+  /** Needs the person mentioned that no likely or possibly eligible program covers. */
+  uncovered_needs: Need[];
 }
 
 const ORDER: Record<Confidence, number> = { likely: 0, possibly: 1, not_eligible: 2 };
+
+/** Overlap between a program's topics and what the person told us. Never affects eligibility. */
+export function relevanceOf(p: Pick<ProgramView, "topics">, facts: Facts): ProgramCard["relevance"] {
+  const topics = p.topics ?? { needs: [], life_events: [] };
+  return {
+    needs: topics.needs.filter((n) => facts.needs?.includes(n)),
+    life_events: topics.life_events.filter((e) => facts.life_events?.includes(e)),
+  };
+}
+
+const relevanceScore = (c: ProgramCard) => c.relevance.needs.length + c.relevance.life_events.length;
+
+/** Needs with no program the person may be eligible for (`not_eligible` cards don't count). */
+export function uncoveredNeeds(cards: ProgramCard[], facts: Facts): Need[] {
+  const covered = new Set(cards.filter((c) => c.confidence !== "not_eligible").flatMap((c) => c.relevance.needs));
+  return (facts.needs ?? []).filter((n) => !covered.has(n));
+}
 
 function cite(r: MatchResult, outcome: (o: string) => boolean): Cited[] {
   return r.criteria.filter((c) => outcome(c.outcome)).map((c) => ({ text: c.text, source_url: c.source_url }));
@@ -93,16 +116,17 @@ export function buildCards(programs: ProgramView[], facts: Facts, lang: UiLang, 
         law: law
           ? { title: law.title[lang], citation: law.citation, what_changed: law.what_changed[lang], approved: law.approved, source_url: law.source_url }
           : null,
+        relevance: relevanceOf(p, facts),
       } satisfies ProgramCard;
     })
-    .sort((a, b) => ORDER[a.confidence] - ORDER[b.confidence] || a.name.localeCompare(b.name));
+    // Confidence first, always: relevance only reorders within "likely", "possibly" and "not eligible".
+    .sort((a, b) => ORDER[a.confidence] - ORDER[b.confidence] || relevanceScore(b) - relevanceScore(a) || a.name.localeCompare(b.name));
 }
 
-export function buildFollowups(programs: ProgramView[], facts: Facts, lang: UiLang, skip: string[] = []) {
-  const results = matchAll(programs, facts, lang);
-  return followUpFacts(results, 3, skip).map((f) => {
-    const meta = FACT_META[f as keyof Facts];
-    return { fact: f as keyof Facts, question: meta.question[lang], help: meta.help?.[lang] ?? null };
+export function buildFollowups(programs: ProgramView[], facts: Facts, lang: UiLang, skip: string[] = [], limit = 3) {
+  return rankFollowups(programs, facts, { limit, skip }).map(({ fact, could_change }) => {
+    const meta = FACT_META[fact];
+    return { fact, question: meta.question[lang], help: meta.help?.[lang] ?? null, could_change };
   });
 }
 

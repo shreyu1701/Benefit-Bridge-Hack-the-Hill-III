@@ -143,6 +143,7 @@ const ccb: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["income_support", "childcare"], life_events: ["expecting_or_new_baby", "separated", "new_to_canada"] },
   summaries_by_language: {
     en: "The Canada Child Benefit is a tax-free monthly payment to help families pay for raising children under 18. The less your family earns, the more you get.",
     fr: "L'Allocation canadienne pour enfants est un paiement mensuel non imposable pour aider les familles à élever leurs enfants de moins de 18 ans. Plus le revenu familial est bas, plus le montant est élevé.",
@@ -225,6 +226,7 @@ const cgeb: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["income_support", "taxes_filing"], life_events: ["new_to_canada"] },
   summaries_by_language: {
     en: "A tax-free payment every three months to help people with low and modest incomes pay for groceries and other essentials. It used to be called the GST/HST credit.",
     fr: "Un paiement non imposable tous les trois mois pour aider les personnes à revenu faible ou modeste à payer l'épicerie et les produits essentiels. Il s'appelait auparavant le crédit pour la TPS/TVH.",
@@ -282,6 +284,7 @@ const cdcp: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["health_dental"], life_events: ["lost_job", "retiring_soon"] },
   summaries_by_language: {
     en: "The Canadian Dental Care Plan helps pay for dental care for people who don't have dental insurance and have a family income under $90,000.",
     fr: "Le Régime canadien de soins dentaires aide à payer les soins dentaires des personnes sans assurance dentaire dont le revenu familial est inférieur à 90 000 $.",
@@ -388,6 +391,7 @@ const cwb: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["income_support", "taxes_filing"], life_events: [] },
   summaries_by_language: {
     en: "The Canada Workers Benefit is money back on your taxes for people who work and earn a low income.",
     fr: "L'Allocation canadienne pour les travailleurs est un crédit d'impôt remboursable pour les personnes qui travaillent et gagnent un faible revenu.",
@@ -452,6 +456,7 @@ const oas: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["income_support"], life_events: ["retiring_soon"] },
   summaries_by_language: {
     en: "Old Age Security is a monthly payment for people 65 and older who have lived in Canada for at least 10 years as adults.",
     fr: "La Sécurité de la vieillesse est un paiement mensuel pour les personnes de 65 ans et plus ayant vécu au Canada au moins 10 ans à l'âge adulte.",
@@ -503,6 +508,7 @@ const gis: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["income_support"], life_events: ["retiring_soon"] },
   summaries_by_language: {
     en: "The Guaranteed Income Supplement is an extra monthly payment for people who get Old Age Security and have a low income.",
     fr: "Le Supplément de revenu garanti est un paiement mensuel supplémentaire pour les personnes qui reçoivent la SV et ont un faible revenu.",
@@ -574,6 +580,7 @@ const otb: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["rent_housing", "income_support", "taxes_filing"], life_events: [] },
   summaries_by_language: {
     en: "The Ontario Trillium Benefit is a tax-free payment that helps people with low to moderate incomes pay for energy costs and sales and property tax.",
     fr: "La Prestation Trillium de l'Ontario est un paiement non imposable qui aide les personnes à revenu faible ou modeste à payer l'énergie, la taxe de vente et l'impôt foncier.",
@@ -626,6 +633,7 @@ const onChildCare: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["childcare"], life_events: ["expecting_or_new_baby"] },
   summaries_by_language: {
     en: "If your child under 6 goes to a licensed child care program that is part of the Canada-wide system, your fees are reduced automatically.",
     fr: "Si votre enfant de moins de 6 ans fréquente un service de garde agréé participant au système pancanadien, vos frais sont réduits automatiquement.",
@@ -688,6 +696,7 @@ const osap: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["education_training"], life_events: ["started_school"] },
   summaries_by_language: {
     en: "OSAP gives grants and loans to help pay for college or university. How much you get depends on your costs and your family's income.",
     fr: "Le RAFEO offre des bourses et des prêts pour payer le collège ou l'université. Le montant dépend de vos coûts et du revenu familial.",
@@ -755,6 +764,7 @@ const ow: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["income_support", "rent_housing", "food"], life_events: ["lost_job", "separated"] },
   summaries_by_language: {
     en: "Ontario Works gives money for food and housing, and help finding a job, to people in Ontario who are in financial need.",
     fr: "Ontario au travail offre de l'argent pour la nourriture et le logement, et de l'aide à l'emploi, aux personnes dans le besoin financier en Ontario.",
@@ -833,6 +843,7 @@ const fairPass: ProgramRecord = {
   status: "needs_verification",
   last_verified_at: null,
   approved_by: null,
+  topics: { needs: ["transit"], life_events: [] },
   summaries_by_language: {
     en: "Fair Pass lowers the cost of TTC rides for Toronto adults with low income.",
     fr: "Fair Pass réduit le coût des trajets de la TTC pour les adultes à faible revenu de Toronto.",

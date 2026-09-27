@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Notice } from "@/components/ui/notice";
 import { ListenButton } from "@/components/listen-button";
 import { useLang, useT } from "@/components/lang-provider";
+import { ENUM_LABELS } from "@/lib/facts/labels";
 import type { Cited, ProgramCard as Card_ } from "@/lib/present";
 import { formatDate } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ export function ProgramCard({ card, speechLang }: { card: Card_; speechLang: str
   const verified = formatDate(card.last_verified_at, lang);
   const changed = formatDate(card.source_last_changed, lang);
   const headingId = `p-${card.id}`;
+  const related = card.relevance ? [...card.relevance.life_events, ...card.relevance.needs] : [];
 
   return (
     <Card>
@@ -51,6 +53,12 @@ export function ProgramCard({ card, speechLang }: { card: Card_; speechLang: str
           <h3 id={headingId} className="text-lg font-bold">{card.name}</h3>
           <ConfidenceBadge c={card.confidence} />
         </div>
+
+        {related.length > 0 && (
+          <p className="text-sm">
+            <span className="font-semibold">{t("results.matches")}:</span> {related.map((v) => ENUM_LABELS[v]?.[lang] ?? v).join(", ")}
+          </p>
+        )}
 
         {card.status === "needs_verification" && (
           <Notice>{card.last_verified_at ? `${t("results.needsVerification")}${card.status_reason ? ` (${card.status_reason})` : ""}` : t("results.unverified")}</Notice>

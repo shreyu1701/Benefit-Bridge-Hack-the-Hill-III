@@ -1,4 +1,13 @@
-import { emptyProfile, PROFILE_KEYS, type Profile, type ProfileKey } from "./schema";
+import { emptyProfile, LIFE_EVENTS, LIST_KEYS, NEEDS, PROFILE_KEYS, type Profile, type ProfileKey } from "./schema";
+
+type ListKey = (typeof LIST_KEYS)[number];
+const LIST_ORDER: Record<ListKey, readonly string[]> = { life_events: LIFE_EVENTS, needs: NEEDS };
+const isListKey = (k: ProfileKey): k is ListKey => (LIST_KEYS as readonly string[]).includes(k);
+
+/** Union of two choice lists, in the schema's order (so equal sets always look equal). */
+function union(key: ListKey, a: string[], b: string[]): string[] {
+  return LIST_ORDER[key].filter((v) => a.includes(v) || b.includes(v));
+}
 
 /**
  * Compare a saved profile with the facts extracted from what the person just
@@ -29,6 +38,7 @@ function normalize(key: ProfileKey, v: unknown): unknown {
   if (v === null || v === undefined) return null;
   if (key === "city" && typeof v === "string") return v.trim().toLowerCase();
   if (key === "children_ages" && Array.isArray(v)) return [...v].sort((a, b) => a - b);
+  if (isListKey(key) && Array.isArray(v)) return union(key, v, []);
   if (key === "years_in_canada" && typeof v === "number") return Math.round(v * 10) / 10;
   return v;
 }
@@ -49,6 +59,17 @@ export function diffFacts(profile: Partial<Profile> | null | undefined, said: Pr
     if (s === null) {
       merged[k] = p;
       if (p !== null) sources[k] = "profile";
+    } else if (isListKey(k) && p !== null) {
+      // Life events and needs add up: mentioning a new need never contradicts the saved ones.
+      const all = union(k, p as string[], s as string[]);
+      merged[k] = all;
+      if (sameValue(k, all, p)) {
+        sources[k] = "profile";
+        out.agreed.push(k);
+      } else {
+        sources[k] = "said";
+        out.new.push(k);
+      }
     } else if (p === null) {
       merged[k] = s;
       sources[k] = "said";

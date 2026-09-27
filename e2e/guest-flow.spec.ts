@@ -25,6 +25,8 @@ test("guest can go from the landing page to cited results", async ({ page }) => 
     children_ages: [2, 4],
     employment_status: "employed",
     family_income_band: "15k_25k", // disagrees with the profile → a conflict to resolve
+    life_events: ["lost_job"],
+    needs: ["rent_housing", "caregiving"], // no program covers caregiving yet → said so on results
   };
 
   // 1. Landing
@@ -100,6 +102,8 @@ test("guest can go from the landing page to cited results", async ({ page }) => 
   await expect(page).toHaveURL(/\/confirm$/);
   await expect(page.getByText("From your profile").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Which is right?" })).toBeVisible();
+  await expect(page.getByRole("button", { name: /What's happening:\s*Lost a job/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Help with:\s*Rent or housing, Caregiving/ })).toBeVisible();
   await expectAccessible(page, "confirm");
   await page.getByRole("button", { name: /Keep my profile/ }).click();
   await expect(page.getByRole("heading", { name: "Which is right?" })).toBeHidden();
@@ -113,7 +117,21 @@ test("guest can go from the landing page to cited results", async ({ page }) => 
   await expect(ccb.getByText("Likely eligible")).toBeVisible();
   await expect(ccb.getByRole("link", { name: /Official page/ })).toHaveAttribute("href", /^https:\/\/www\.canada\.ca\//);
   await expect(page.getByRole("main").getByText(/^This is not legal or financial advice/)).toBeVisible();
+
+  // What they told us: named on the page, related programs tagged, and uncovered needs said plainly.
+  await expect(page.getByText(/Because you mentioned Lost a job, Rent or housing, Caregiving/)).toBeVisible();
+  const ow = page.getByRole("article", { name: "Ontario Works" });
+  await expect(ow.getByText(/Related to:.*Lost a job/)).toBeVisible();
+  await expect(page.getByText(/doesn't have a program for this yet/)).toContainText("Caregiving");
   await expectAccessible(page, "results");
+
+  // A follow-up answer re-runs the rules and says what moved.
+  const disability = page.getByRole("radiogroup", { name: "Do you have a disability?" });
+  await expect(page.getByText(/Your answer could change/).first()).toBeVisible();
+  await disability.getByRole("radio", { name: "No", exact: true }).click();
+  await disability.locator("xpath=ancestor::*[.//button[normalize-space()='Answer']][1]").getByRole("button", { name: "Answer" }).click();
+  await expect(page.getByText(/^Updated:.*Canada Workers Benefit.*Likely eligible/)).toBeVisible();
+  await expectAccessible(page, "results after answer");
 });
 
 test("dark theme follows the device and passes the same accessibility scan", async ({ page }) => {
@@ -126,7 +144,8 @@ test("dark theme follows the device and passes the same accessibility scan", asy
   // The toggle overrides the device setting (desktop layout shows it in the header).
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
-  await page.getByRole("group", { name: "Theme" }).getByRole("button", { name: "Light" }).click();
+  // Desktop header: one button that steps Match device → Light → Dark.
+  await page.getByRole("button", { name: /^Theme: Match device/ }).click();
   await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
   await expectAccessible(page, "light via toggle");
 });

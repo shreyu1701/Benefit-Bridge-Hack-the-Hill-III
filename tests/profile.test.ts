@@ -65,6 +65,22 @@ describe("diffFacts (profile vs what they said)", () => {
     expect(d.merged.children_ages).toEqual([2, 4, 7]);
   });
 
+  it("life events and needs add up instead of conflicting", () => {
+    const saved = p({ needs: ["transit"], life_events: ["new_to_canada"] });
+    const d = diffFacts(saved, p({ needs: ["rent_housing"], life_events: ["new_to_canada"] }));
+    expect(d.conflicts).toEqual([]);
+    expect(d.merged.needs).toEqual(["rent_housing", "transit"]); // schema order
+    expect(d.sources.needs).toBe("said");
+    expect(d.new).toEqual(["needs"]);
+    expect(d.agreed).toEqual(["life_events"]);
+  });
+
+  it("an empty or reordered list of needs is not news", () => {
+    const saved = p({ needs: ["transit", "food"] });
+    expect(diffFacts(saved, p({ needs: [] })).agreed).toEqual(["needs"]);
+    expect(diffFacts(saved, p({ needs: ["food", "transit"] })).agreed).toEqual(["needs"]);
+  });
+
   it("works with no profile (guest before onboarding)", () => {
     const d = diffFacts(null, p({ age: 30 }));
     expect(d.merged.age).toBe(30);

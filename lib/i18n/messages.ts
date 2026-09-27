@@ -105,6 +105,11 @@ const en = {
   "results.noData":
     "We don't have enough verified information for this part — check the official page.",
   "results.edit": "Edit my answers",
+  "results.mentioned": "Because you mentioned",
+  "results.mentionedNote": "programs related to it are listed first in each section. This never changes whether you qualify.",
+  "results.matches": "Related to",
+  "results.uncovered": "Our list doesn't have a program for this yet:",
+  "results.uncoveredLink": "See all Government of Canada benefits",
 
   "personas.title": "How this affects people like you",
   "personas.label":
@@ -145,6 +150,12 @@ const en = {
 
   "q.answer": "Answer",
   "q.skip": "Skip",
+  "q.couldChangeOne": "Your answer could change 1 result.",
+  "q.couldChangeMany": "Your answer could change up to {n} results.",
+  "q.more": "More questions",
+  "results.updating": "Updating your results…",
+  "results.changed": "Updated:",
+  "results.noChange": "Updated. Your answer didn't change any result.",
   "common.yes": "Yes",
   "common.no": "No",
   "common.loading": "Loading…",
@@ -259,6 +270,11 @@ const fr: Record<MessageKey, string> = {
   "results.noData":
     "Nous n'avons pas assez de renseignements vérifiés pour ce point — consultez la page officielle.",
   "results.edit": "Modifier mes réponses",
+  "results.mentioned": "Comme vous avez mentionné",
+  "results.mentionedNote": "les programmes liés sont présentés en premier dans chaque section. Cela ne change jamais votre admissibilité.",
+  "results.matches": "Lié à",
+  "results.uncovered": "Notre liste n'a pas encore de programme pour :",
+  "results.uncoveredLink": "Voir toutes les prestations du gouvernement du Canada",
 
   "personas.title": "Ce que cela signifie pour des gens comme vous",
   "personas.label":
@@ -301,6 +317,12 @@ const fr: Record<MessageKey, string> = {
 
   "q.answer": "Répondre",
   "q.skip": "Passer",
+  "q.couldChangeOne": "Votre réponse pourrait changer 1 résultat.",
+  "q.couldChangeMany": "Votre réponse pourrait changer jusqu'à {n} résultats.",
+  "q.more": "Plus de questions",
+  "results.updating": "Mise à jour de vos résultats…",
+  "results.changed": "Mis à jour :",
+  "results.noChange": "Mis à jour. Votre réponse n'a changé aucun résultat.",
   "common.yes": "Oui",
   "common.no": "Non",
   "common.loading": "Chargement…",

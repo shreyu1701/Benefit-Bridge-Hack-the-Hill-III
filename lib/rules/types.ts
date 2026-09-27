@@ -1,5 +1,6 @@
 import type { RulesLogic, AdditionalOperation } from "json-logic-js";
 import type { Level } from "@/data/jurisdictions";
+import type { LifeEvent, Need } from "@/lib/profile/schema";
 
 export type Localized = { en: string; fr: string };
 export type Logic = RulesLogic<AdditionalOperation>;
@@ -64,7 +65,17 @@ export interface ProgramRecord {
   status: "active" | "needs_verification" | "retired";
   last_verified_at: string | null;
   approved_by: string | null;
+  /**
+   * What the program helps with and which life events make it relevant.
+   * Used ONLY to put the most relevant results first; never read by the rules.
+   */
+  topics: ProgramTopics;
   summaries_by_language: Record<string, string>;
+}
+
+export interface ProgramTopics {
+  needs: Need[];
+  life_events: LifeEvent[];
 }
 
 export type CriterionOutcome = "met" | "failed" | "unknown" | "data_gap" | "not_applicable";

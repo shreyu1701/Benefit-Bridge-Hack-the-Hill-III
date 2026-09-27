@@ -4,7 +4,7 @@ import { deriveData } from "@/lib/facts/derive";
 import { hasDatabase, query } from "@/lib/db/pool";
 import { errorResponse, json } from "@/lib/http";
 import { loadPrograms } from "@/lib/programs-repo";
-import { buildCards, buildFollowups, buildPersonas, regionOf, type MatchResponse, type ProgramCard } from "@/lib/present";
+import { buildCards, buildFollowups, buildPersonas, regionOf, uncoveredNeeds, type MatchResponse, type ProgramCard } from "@/lib/present";
 import { translateMany } from "@/lib/translate-cache";
 
 const Body = z.object({
@@ -12,6 +12,8 @@ const Body = z.object({
   /** Any BCP-47 language for results. en/fr are native; others are machine-translated. */
   lang: z.string().min(2).max(20).default("en"),
   skip_questions: z.array(z.string()).max(30).default([]),
+  /** How many follow-up questions to return ("More questions" asks for 6). */
+  questions: z.number().int().min(1).max(6).default(3),
 });
 
 /**
@@ -28,7 +30,7 @@ export async function POST(req: Request) {
 
     const programs = await loadPrograms();
     let cards = buildCards(programs, facts, uiLang);
-    let followups = buildFollowups(programs, facts, uiLang, body.skip_questions);
+    let followups = buildFollowups(programs, facts, uiLang, body.skip_questions, body.questions);
     let personas = buildPersonas(programs, facts, uiLang);
     let machine_translated = false;
 
@@ -40,9 +42,12 @@ export async function POST(req: Request) {
       }
     }
 
-    recordMatches(cards, regionOf(facts, deriveData(facts).municipality));
+    const region = regionOf(facts, deriveData(facts).municipality);
+    const uncovered_needs = uncoveredNeeds(cards, facts);
+    recordMatches(cards, region);
+    recordNeedGaps(uncovered_needs, region);
 
-    const res: MatchResponse = { lang: machine_translated ? base : uiLang, machine_translated, cards, followups, personas };
+    const res: MatchResponse = { lang: machine_translated ? base : uiLang, machine_translated, cards, followups, personas, uncovered_needs };
     return json(res);
   } catch (e) {
     return errorResponse(e);
@@ -57,6 +62,15 @@ function recordMatches(cards: ProgramCard[], region: string) {
   const values = hits.map((_, i) => `($${i * 3 + 1}, $${i * 3 + 2}, $${i * 3 + 3})`).join(",");
   query(`INSERT INTO match_events (program_id, region, confidence) VALUES ${values}`, hits.flatMap((c) => [c.id, region, c.confidence])).catch((e) =>
     console.error("match_events insert failed", e),
+  );
+}
+
+/** Anonymous: which needs we couldn't match, and the jurisdiction-level region. Nothing else. */
+function recordNeedGaps(needs: string[], region: string) {
+  if (!hasDatabase() || !needs.length) return;
+  const values = needs.map((_, i) => `(${i * 2 + 1}, ${i * 2 + 2})`).join(",");
+  query(`INSERT INTO need_gaps (need, region) VALUES ${values}`, needs.flatMap((n) => [n, region])).catch((e) =>
+    console.error("need_gaps insert failed", e),
   );
 }
 

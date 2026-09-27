@@ -66,10 +66,10 @@ export default async function RootLayout({
             <div className="mx-auto max-w-6xl px-4 sm:px-8 py-2 flex items-center justify-between gap-3">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2.5 min-h-11 no-underline text-foreground"
+                className="inline-flex shrink-0 items-center gap-2.5 min-h-11 no-underline text-foreground"
               >
                 <Logo />
-                <span className="font-display text-2xl font-medium tracking-tight">
+                <span className="font-display text-2xl font-medium tracking-tight whitespace-nowrap">
                   {t("app.name")}
                 </span>
               </Link>

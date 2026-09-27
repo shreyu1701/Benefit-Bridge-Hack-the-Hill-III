@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
  * server redirects mounted by proxy.ts, so these are plain <a> links, not
  * client navigation. Rendered only when Auth0 is configured.
  */
-const pill = "inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-[15px] no-underline";
+const pill = "inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-full px-3 text-[15px] no-underline";
 
 export function LoginButton({ className, returnTo = "/start" }: { className?: string; returnTo?: string }) {
   const t = useT();

@@ -14,12 +14,34 @@ const OPTIONS = [
 
 const noop = () => () => {};
 
-/** Light / dark / system switch. Rendered unpressed until mounted, because the saved theme is only known in the browser. */
-export function ThemeToggle({ showLabels = false }: { showLabels?: boolean }) {
+/**
+ * Light / dark / system switch. Rendered unpressed until mounted, because the saved theme is only known in the browser.
+ * `compact` is one button that steps through the three (the desktop header has no room for all three).
+ */
+export function ThemeToggle({ showLabels = false, compact = false }: { showLabels?: boolean; compact?: boolean }) {
   const lang = useLang();
   const { theme, setTheme } = useTheme();
   const mounted = useSyncExternalStore(noop, () => true, () => false);
   const current = mounted ? theme ?? "system" : null;
+
+  if (compact) {
+    const i = Math.max(0, OPTIONS.findIndex((o) => o.value === (current ?? "system")));
+    const { icon: Icon, label } = OPTIONS[i];
+    const next = OPTIONS[(i + 1) % OPTIONS.length];
+    const name = lang === "fr" ? "Thème" : "Theme";
+    const hint = lang === "fr" ? "passer à" : "switch to";
+    return (
+      <button
+        type="button"
+        aria-label={`${name}: ${label[lang]} (${hint} ${next.label[lang]})`}
+        title={`${name}: ${label[lang]}`}
+        onClick={() => setTheme(next.value)}
+        className="inline-flex size-11 items-center justify-center rounded-full border border-border-strong text-foreground hover:bg-surface"
+      >
+        <Icon aria-hidden size={18} />
+      </button>
+    );
+  }
 
   return (
     <div role="group" aria-label={lang === "fr" ? "Thème" : "Theme"} className="inline-flex items-center rounded-full border border-border-strong p-0.5">

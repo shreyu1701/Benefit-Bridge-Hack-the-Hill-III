@@ -15,14 +15,16 @@ import { cn } from "@/lib/utils";
  * Main navigation. Each item lists the route prefixes it "owns", so the
  * benefits link stays marked as current through the whole check flow
  * (form → confirm → results → checklist → program details).
- * Below the xl breakpoint the links collapse into a menu button.
+ * Below the xl breakpoint the links collapse into a menu button. The desktop
+ * row leaves out Home (the logo) and Privacy (in the footer) so it fits on one
+ * line in French too; the menu lists everything.
  */
-const ITEMS: { href: string; label: MessageKey; match: string[] }[] = [
-  { href: "/", label: "nav.landing", match: [] },
+const ITEMS: { href: string; label: MessageKey; match: string[]; desktop?: false }[] = [
+  { href: "/", label: "nav.landing", match: [], desktop: false },
   { href: "/start", label: "nav.home", match: ["/start", "/onboarding", "/describe", "/confirm", "/results", "/checklist", "/programs"] },
   { href: "/laws", label: "nav.laws", match: ["/laws"] },
   { href: "/insights", label: "nav.insights", match: ["/insights"] },
-  { href: "/privacy", label: "nav.privacy", match: ["/privacy"] },
+  { href: "/privacy", label: "nav.privacy", match: ["/privacy"], desktop: false },
   { href: "/account", label: "nav.account", match: ["/account"] },
 ];
 
@@ -51,7 +53,7 @@ export function MainNav({ authEnabled = false, signedIn = false }: { authEnabled
   }, [open]);
 
   const links = (mobile: boolean) =>
-    ITEMS.map((item) => {
+    ITEMS.filter((item) => mobile || item.desktop !== false).map((item) => {
       const active = isActive(pathname, item);
       return (
         <li key={item.href}>
@@ -60,8 +62,8 @@ export function MainNav({ authEnabled = false, signedIn = false }: { authEnabled
             aria-current={active ? "page" : undefined}
             onClick={() => setOpen(false)}
             className={cn(
-              "min-h-11 flex items-center rounded-lg px-3 no-underline",
-              mobile ? "text-base" : "text-[15px]",
+              "min-h-11 flex items-center rounded-lg no-underline",
+              mobile ? "px-3 text-base" : "px-2.5 text-[15px] whitespace-nowrap",
               active ? "font-semibold text-primary underline decoration-2 underline-offset-8" : "text-foreground hover:bg-surface",
             )}
           >
@@ -72,10 +74,10 @@ export function MainNav({ authEnabled = false, signedIn = false }: { authEnabled
     });
 
   return (
-    <nav aria-label="Main" className="flex items-center gap-2">
-      <ul className="hidden xl:flex items-center gap-1">{links(false)}</ul>
+    <nav aria-label="Main" className="flex shrink-0 items-center gap-2">
+      <ul className="hidden xl:flex items-center gap-1 mr-2">{links(false)}</ul>
       <div className="hidden xl:block">
-        <ThemeToggle />
+        <ThemeToggle compact />
       </div>
       <LangToggle />
       {authEnabled && (

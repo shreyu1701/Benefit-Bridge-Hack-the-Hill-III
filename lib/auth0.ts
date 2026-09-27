@@ -12,9 +12,16 @@ import { timingSafeEqual } from "node:crypto";
  * Local development without Auth0: set ADMIN_TOKEN and send it as the
  * `x-admin-token` header or `bb_admin` cookie. It is ignored in production.
  */
-export const auth0Enabled = Boolean(
-  process.env.AUTH0_DOMAIN && process.env.AUTH0_CLIENT_ID && process.env.AUTH0_CLIENT_SECRET && process.env.AUTH0_SECRET,
-);
+const AUTH0_VARS = ["AUTH0_DOMAIN", "AUTH0_CLIENT_ID", "AUTH0_CLIENT_SECRET", "AUTH0_SECRET"] as const;
+const missingAuth0Vars = AUTH0_VARS.filter((k) => !process.env[k]?.trim());
+
+export const auth0Enabled = missingAuth0Vars.length === 0;
+
+// Some but not all set is almost always a deployment mistake (e.g. a variable added only
+// to Vercel's Preview environment). Log the NAMES only, never values.
+if (missingAuth0Vars.length > 0 && missingAuth0Vars.length < AUTH0_VARS.length) {
+  console.warn(`Auth0 sign-in is OFF: missing ${missingAuth0Vars.join(", ")}. Everyone is a guest until all four are set.`);
+}
 
 export const auth0 = auth0Enabled
   ? new Auth0Client({ authorizationParameters: { scope: "openid profile email" } })
